@@ -1,5 +1,4 @@
 import System.IO  
-import Control.Monad
 
 getSumForGroup :: [Int] -> Int
 getSumForGroup [x] = x
