@@ -1,4 +1,6 @@
-import System.IO  
+import System.IO
+import Data.List (sortBy)
+import Data.Ord (comparing)
 
 getSumForGroup :: [Int] -> Int
 getSumForGroup [x] = x
@@ -18,10 +20,15 @@ main = do
   -- process input
   let list = (lines contents)
   let groups = splitIntoGroups [] list
-  let answer = maximum(map getSumForGroup groups)
+  let totalPerElf = map getSumForGroup groups
+  let answer = maximum(totalPerElf)
 
   -- show output
   print answer
+
+  -- part 2
+  let sortedTotals = take 3 (sortBy (\x y -> compare y x) totalPerElf)
+  print (foldr (+) 0 sortedTotals)
 
   -- tie up loose ends
   hClose handle
