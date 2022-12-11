@@ -18,10 +18,10 @@ main = do
   contents <- hGetContents handle
 
   -- part 1
-  let list = (lines contents)
+  let list = lines contents
   let groups = splitIntoGroups [] list
   let totalPerElf = map getSumForGroup groups
-  let answer = maximum(totalPerElf)
+  let answer = maximum totalPerElf
   print answer
 
   -- part 2
