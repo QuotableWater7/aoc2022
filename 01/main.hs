@@ -17,18 +17,18 @@ main = do
   handle <- openFile "/Users/josephbowler/agora/aoc2022/01/input.txt" ReadMode
   contents <- hGetContents handle
 
-  -- process input
+  -- part 1
   let list = (lines contents)
   let groups = splitIntoGroups [] list
   let totalPerElf = map getSumForGroup groups
   let answer = maximum(totalPerElf)
-
-  -- show output
   print answer
 
   -- part 2
-  let sortedTotals = take 3 (sortBy (\x y -> compare y x) totalPerElf)
-  print (foldr (+) 0 sortedTotals)
+  let sortedTotals = sortBy (\x y -> compare y x) totalPerElf
+  let top3Totals = take 3 sortedTotals
+  let answerPart2 = foldr (+) 0 top3Totals
+  print answerPart2
 
   -- tie up loose ends
   hClose handle
