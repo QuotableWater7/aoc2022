@@ -2,12 +2,27 @@ import System.IO
 import Data.Char
 import Control.Monad
 
+getPriority :: Maybe Char -> Maybe Int 
+getPriority Nothing = Nothing
+getPriority (Just ltr)
+  | ord ltr >= 97 = Just((ord ltr) - 96)
+  | otherwise = Just((ord ltr) - 65 + 27)
+
+-- part 1 helpers
+
 firstMutual :: Eq a => [a] -> [a] -> Maybe a
 firstMutual [] _ = Nothing
 firstMutual _ [] = Nothing
 firstMutual (x:xs) ys
   | x `elem` ys = Just x
   | otherwise = firstMutual xs ys
+
+splitRucksack :: String -> (String, String)
+splitRucksack list = ((take sacklength list), (drop sacklength list))
+  where
+    sacklength = (length list) `div` 2
+
+-- part 2 helpers
 
 firstMutualPart2 :: Eq a => [a] -> [a] -> [a] -> Maybe a
 firstMutualPart2 [] _ _ = Nothing
@@ -17,20 +32,9 @@ firstMutualPart2 (x:xs) ys zs
   | x `elem` ys && x `elem` zs = Just x
   | otherwise = firstMutualPart2 xs ys zs
 
-splitRucksack :: String -> (String, String)
-splitRucksack list = ((take sacklength list), (drop sacklength list))
-  where
-    sacklength = (length list) `div` 2
-
 splitRucksackPart2 :: [String] -> [(String, String, String)]
 splitRucksackPart2 [] = []
 splitRucksackPart2 (x:y:z:xs) = [(x, y, z)] ++ splitRucksackPart2 xs
-
-getPriority :: Maybe Char -> Maybe Int 
-getPriority Nothing = Nothing
-getPriority (Just ltr)
-  | ord ltr >= 97 = Just((ord ltr) - 96)
-  | otherwise = Just((ord ltr) - 65 + 27)
 
 main = do  
   -- read file contents
