@@ -6,11 +6,14 @@ getSumForGroup :: [Int] -> Int
 getSumForGroup [x] = x
 getSumForGroup (x:xs) = x + getSumForGroup(xs)
 
-splitIntoGroups :: [Int] -> [String] -> [[Int]]
-splitIntoGroups current [] = [current]
-splitIntoGroups current (x:xs) 
-  | null x = current:(splitIntoGroups [] xs)
-  | otherwise = splitIntoGroups ((read x):current) xs
+splitIntoGroups :: [String] -> [[Int]]
+splitIntoGroups [] = []
+splitIntoGroups list = splitIntoGroupsHelper [] list
+  where 
+    splitIntoGroupsHelper current [] = [current]
+    splitIntoGroupsHelper current (x:xs)
+      | null x = [current] ++ (splitIntoGroups xs)
+      | otherwise = splitIntoGroupsHelper ((read x):current) xs
 
 main = do  
   -- read file contents
@@ -19,7 +22,7 @@ main = do
 
   -- part 1
   let list = lines contents
-  let groups = splitIntoGroups [] list
+  let groups = splitIntoGroups list
   let totalPerElf = map getSumForGroup groups
   let answer = maximum totalPerElf
   print answer
