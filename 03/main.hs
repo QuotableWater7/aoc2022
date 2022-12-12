@@ -9,10 +9,22 @@ firstMutual (x:xs) ys
   | x `elem` ys = Just x
   | otherwise = firstMutual xs ys
 
+firstMutualPart2 :: Eq a => [a] -> [a] -> [a] -> Maybe a
+firstMutualPart2 [] _ _ = Nothing
+firstMutualPart2 _ [] _ = Nothing
+firstMutualPart2 _ _ [] = Nothing
+firstMutualPart2 (x:xs) ys zs
+  | x `elem` ys && x `elem` zs = Just x
+  | otherwise = firstMutualPart2 xs ys zs
+
 splitRucksack :: String -> (String, String)
 splitRucksack list = ((take sacklength list), (drop sacklength list))
   where
     sacklength = (length list) `div` 2
+
+splitRucksackPart2 :: [String] -> [(String, String, String)]
+splitRucksackPart2 [] = []
+splitRucksackPart2 (x:y:z:xs) = [(x, y, z)] ++ splitRucksackPart2 xs
 
 getPriority :: Maybe Char -> Maybe Int 
 getPriority Nothing = Nothing
@@ -32,6 +44,13 @@ main = do
   let priorities = fmap getPriority firstMutuals
   let answer = fmap sum $ sequence priorities
   print answer
+
+  -- part 2
+  let rucksacksInThirds = splitRucksackPart2 rucksacks
+  let firstMutualsPart2 = map (\(a, b, c) -> (firstMutualPart2 a b c)) rucksacksInThirds
+  let prioritiesPart2 = fmap getPriority firstMutualsPart2
+  let answerPart2 = fmap sum $ sequence prioritiesPart2
+  print answerPart2
 
   -- tie up loose ends
   hClose handle
