@@ -16,13 +16,10 @@ computeIndexPart2 [] = 0
 computeIndexPart2 str = computeIndexHelperPart2 0 str
   where
     computeIndexHelperPart2 n [] = n
-    computeIndexHelperPart2 n list@(x:xs) = case (length_first_fourteen == 14) of 
-      True -> case (length (L.nub(first_fourteen)) == 14) of
-          True -> n + 14
-          False -> computeIndexHelperPart2 (n + 1) xs
-      False -> 0
+    computeIndexHelperPart2 n list@(x:xs)
+      | length (L.nub(first_fourteen)) == 14 = n + 14
+      | otherwise = computeIndexHelperPart2 (n+1) xs
       where first_fourteen = take 14 list
-            length_first_fourteen = length first_fourteen
 
 main = do
   handle <- openFile "/Users/josephbowler/agora/aoc2022/06/input.txt" ReadMode
