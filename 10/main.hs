@@ -12,8 +12,7 @@ computeRegisterValue ((Addx amount):ops) n = amount + computeRegisterValue ops (
 
 convertToPixel :: [Op] -> Int -> Char
 convertToPixel ops n = if position_difference <= 1 
-  then do
-    '#' 
+  then do '#' 
   else do '.'
   where
     register_value = computeRegisterValue ops n
