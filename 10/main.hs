@@ -25,9 +25,11 @@ stringToOp str
   | "addx" `elem` (words str) = Addx ((read . last . words) str)
   | otherwise = error ("error: " ++ str)
 
-breakIntoLines :: [Char] -> Int -> [[Char]]
-breakIntoLines [] n = []
-breakIntoLines list n = [take n list] ++ breakIntoLines (drop n list) n
+chunk :: Int -> [a] -> [[a]]
+chunk n [] = []
+chunk n list = [n_elements] ++ chunk n rest
+  where
+    (n_elements, rest) = splitAt n list
 
 main = do
   handle <- openFile "/Users/josephbowler/agora/aoc2022/10/input.txt" ReadMode
@@ -41,9 +43,9 @@ main = do
   print (sum results)
 
   -- part 2
-  let numbers = [x | x <- [1..240]]
-  let pixels = map (convertToPixel ops) numbers
-  let pixelLines = breakIntoLines pixels 40
+  let pixel_indices = [1..240]
+  let pixels = map (convertToPixel ops) pixel_indices
+  let pixelLines = chunk 40 pixels
   mapM print pixelLines
 
   -- cleanup
