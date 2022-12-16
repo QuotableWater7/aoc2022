@@ -40,13 +40,11 @@ main = do
   let list = lines contents
   let selections = map parseChoices list
 
-  let scores = map computeSingleScore selections
-  let total = foldr (+) 0 scores
-  print total
+  let answerPart1 = sum . map computeSingleScore $ selections
+  print answerPart1
 
   -- part 2
-  let scoresPart2 = map computeSingleScorePart2 selections
-  let totalPart2 = foldr (+) 0 scoresPart2
-  print totalPart2
+  let answerPart2 = sum . map computeSingleScorePart2 $ selections
+  print answerPart2
 
   hClose handle
