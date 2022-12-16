@@ -23,7 +23,7 @@ main = do
   print answerPart1
 
   -- part 2
-  let sortedTotals = sortBy (\x y -> compare y x) totalPerElf
+  let sortedTotals = sortBy (flip compare) totalPerElf
   let answerPart2 = sum . take 3 $ sortedTotals
   print answerPart2
 
