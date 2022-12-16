@@ -10,7 +10,7 @@ isFullyOverlapping s1 s2 =
 
 isPartiallyOverlapping :: Schedule -> Schedule -> Bool
 isPartiallyOverlapping s1 s2 = 
-  (start(s1) <= start(s2) &&  end(s1) >= start(s2)) ||
+  (start(s1) <= start(s2) && end(s1) >= start(s2)) ||
   (start(s2) < start(s1) && end(s2) >= start(s1))
 
 getScheduleFromString :: String -> Schedule
@@ -25,11 +25,11 @@ main = do
 
   -- part 1
   let assignmentTuples = map (map getScheduleFromString . (splitOn ",")) (lines contents)
-  let answerPart1 = foldr (\[x, y] -> (+ if isFullyOverlapping x y then 1 else 0)) 0 assignmentTuples
+  let answerPart1 = length . filter (\[x, y] -> isFullyOverlapping x y) $ assignmentTuples
   print answerPart1
 
   -- part 2
-  let answerPart2 = foldr (\[x, y] -> (+ if isPartiallyOverlapping x y then 1 else 0)) 0 assignmentTuples
+  let answerPart2 = length . filter (\[x, y] -> isPartiallyOverlapping x y) $ assignmentTuples
   print answerPart2
 
   -- tie up loose ends
