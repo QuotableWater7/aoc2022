@@ -2,10 +2,6 @@ import System.IO
 import Data.List (sortBy)
 import Data.Ord (comparing)
 
-getSumForGroup :: [Int] -> Int
-getSumForGroup [x] = x
-getSumForGroup (x:xs) = x + getSumForGroup(xs)
-
 splitIntoGroups :: [String] -> [[Int]]
 splitIntoGroups [] = []
 splitIntoGroups list = splitIntoGroupsHelper [] list
@@ -22,15 +18,13 @@ main = do
 
   -- part 1
   let list = lines contents
-  let groups = splitIntoGroups list
-  let totalPerElf = map getSumForGroup groups
-  let answer = maximum totalPerElf
-  print answer
+  let totalPerElf = map sum . splitIntoGroups $ list
+  let answerPart1 = maximum totalPerElf
+  print answerPart1
 
   -- part 2
   let sortedTotals = sortBy (\x y -> compare y x) totalPerElf
-  let top3Totals = take 3 sortedTotals
-  let answerPart2 = foldr (+) 0 top3Totals
+  let answerPart2 = sum . take 3 $ sortedTotals
   print answerPart2
 
   -- tie up loose ends
