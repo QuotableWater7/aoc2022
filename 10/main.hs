@@ -11,12 +11,14 @@ computeRegisterValue ((Addx amount):ops) 2 = 1
 computeRegisterValue ((Addx amount):ops) n = amount + computeRegisterValue ops (n - 2)
 
 convertToPixel :: [Op] -> Int -> Char
-convertToPixel ops n = if position_difference <= 1 
+convertToPixel ops pixel_index = 
+  if position_difference <= 1 
   then do '#' 
   else do '.'
   where
-    register_value = computeRegisterValue ops n
-    position_difference = abs(register_value - ((n - 1) `mod` 40))
+    register_value = computeRegisterValue ops pixel_index
+    pixel_x_pos = (pixel_index - 1) `mod` 40
+    position_difference = abs (register_value - pixel_x_pos)
 
 stringToOp :: String -> Op
 stringToOp [] = Noop
