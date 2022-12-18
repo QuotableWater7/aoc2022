@@ -1,6 +1,8 @@
 import System.IO
 import Text.Regex.TDFA
+import Data.List
 import Data.List.Split
+import Data.Function
 
 data Variable = DynamicValue | HardcodedValue Int deriving(Show)
 data OpType = Multiply | Add
@@ -27,21 +29,75 @@ processExpression (Expression Multiply x y) = x * y
 
 data Monkey = Monkey {
   index :: Int,
-  startingItems :: [Int],
+  items :: [Int],
   operation :: Operation,
   test :: Int -> Bool,
   testTrue :: Int,
   testFalse :: Int
 }
 
+removeFirstItem :: Monkey -> (Int, Monkey)
+removeFirstItem monkey = (item, updatedMonkey)
+  where
+    item = (head . items) monkey
+    updatedMonkey = Monkey { 
+      index=index monkey, 
+      items=(tail . items) monkey,  
+      operation=operation monkey,
+      test=test monkey,
+      testTrue=testTrue monkey,
+      testFalse=testFalse monkey
+    }
+
+pushItem :: Monkey -> Int -> Monkey
+pushItem monkey item = Monkey { 
+  index=index monkey, 
+  items=(items monkey) ++ [item],  
+  operation=operation monkey,
+  test=test monkey,
+  testTrue=testTrue monkey,
+  testFalse=testFalse monkey
+}
+
+computeWorryLevel :: Monkey -> Int -> Int
+computeWorryLevel monkey item = result
+  where
+    worryLevelAfterInspection = processExpression $ convertOperationToExpression (operation monkey) item
+    result = floor (worryLevelAfterInspection / 3)
+
 instance Show Monkey where
-  show m = show (index m) ++ "/" ++ show (startingItems m) ++ "/" ++ show (testTrue m) ++ "/" ++ show (testFalse m)
+  show m = show (index m) ++ "/" ++ show (items m) ++ "/" ++ show (testTrue m) ++ "/" ++ show (testFalse m)
+
+runTurnForMonkey :: [Monkey] -> Int -> ([Monkey], Int)
+runTurnForMonkey monkeys monkeyIndex = (updatedMonkeyList, nextMonkeyIndex)
+  where
+    -- current monkey
+    currentMonkey = find (\m -> index m == monkeyIndex) monkeys
+    (item, updatedCurrentMonkey) = removeFirstItem currentMonkey
+    worryLevel = computeWorryLevel currentMonkey item
+
+    -- monkey to update
+    monkeyToUpdateIndex = if (test currentMonkey $ worryLevelDividedByThree) then testTrue currentMonkey else testFalse currentMonkey
+    monkeyToUpdate = find (\m -> index m == monkeyToUpdateIndex) monkeys
+    updatedMonkeyToUpdate = pushItem monkeyToUpdate item
+
+    -- prepare results
+    otherMonkeys = filter (\m -> not (index m `elem` [monkeyIndex, monkeyToUpdateIndex])) monkeys
+    updatedMonkeyList = [updatedCurrentMonkey, updatedMonkeyToUpdate] ++ otherMonkeys
+    nextMonkeyIndex = 
+      if null (items updatedCurrentMonkey)
+      then
+        if monkeyIndex < (length monkeys - 1) 
+        then -1
+        else monkeyIndex + 1 
+      else monkeyIndex
+    
 
 parseMonkey :: String -> Monkey
-parseMonkey str = Monkey { index=index, startingItems=startingItems, operation=operation, test=test, testTrue=testTrue, testFalse=testFalse }
+parseMonkey str = Monkey { index=index, items=items, operation=operation, test=test, testTrue=testTrue, testFalse=testFalse }
   where
     index = ((read :: String -> Int) . last . head) (str =~ "Monkey ([0-9]+):"::[[String]])
-    startingItems = ((map (read :: String->Int)) . (splitOn ", ") . last . head) (str =~ "Starting items: (.*)"::[[String]])
+    items = ((map (read :: String->Int)) . (splitOn ", ") . last . head) (str =~ "Starting items: (.*)"::[[String]])
     opType = (last . head) (str =~ "Operation:.*([+*]).*"::[[String]])
     var1 = (last . head) (str =~ "Operation:.*([a-z0-9]+) [+*].*"::[[String]])
     var2 = (last . head) (str =~ "Operation:.*[+*] ([a-z0-9]+).*"::[[String]])
@@ -59,7 +115,8 @@ main = do
   -- part 1
   let rawMonkeyStrings = splitOn ("\n\n") contents
   let monkeys = map parseMonkey rawMonkeyStrings
-  print monkeys
+  let (updatedMonkeys, nextMonkeyIndex) = runTurnForMonkey monkeys 0
+  print nextMonkeyIndex
 
   -- tidy up
   hClose handle

@@ -1,7 +1,7 @@
 import System.IO
 
 data TicTacToe = TicTacToe {
-  board :: A.Array TileIndex TileState
+  board :: [[String]] TileIndex TileState
 }
 
 main = do
