@@ -63,35 +63,38 @@ computeWorryLevel :: Monkey -> Int -> Int
 computeWorryLevel monkey item = result
   where
     worryLevelAfterInspection = processExpression $ convertOperationToExpression (operation monkey) item
-    result = floor (worryLevelAfterInspection / 3)
+    result = floor ((fromIntegral worryLevelAfterInspection) / 3)
 
 instance Show Monkey where
   show m = show (index m) ++ "/" ++ show (items m) ++ "/" ++ show (testTrue m) ++ "/" ++ show (testFalse m)
 
-runTurnForMonkey :: [Monkey] -> Int -> ([Monkey], Int)
-runTurnForMonkey monkeys monkeyIndex = (updatedMonkeyList, nextMonkeyIndex)
-  where
-    -- current monkey
-    currentMonkey = find (\m -> index m == monkeyIndex) monkeys
-    (item, updatedCurrentMonkey) = removeFirstItem currentMonkey
-    worryLevel = computeWorryLevel currentMonkey item
+runTurnForMonkey :: Int -> [Monkey] -> Maybe ([Monkey], Int)
+runTurnForMonkey monkeyIndex monkeys = do
+  -- current monkey
+  currentMonkey <- find (\m -> index m == monkeyIndex) monkeys
+  let (item, updatedCurrentMonkey) = removeFirstItem currentMonkey
+  let worryLevel = computeWorryLevel currentMonkey item
 
-    -- monkey to update
-    monkeyToUpdateIndex = if (test currentMonkey $ worryLevelDividedByThree) then testTrue currentMonkey else testFalse currentMonkey
-    monkeyToUpdate = find (\m -> index m == monkeyToUpdateIndex) monkeys
-    updatedMonkeyToUpdate = pushItem monkeyToUpdate item
+  -- monkey to update
+  let monkeyToUpdateIndex = if test currentMonkey worryLevel then testTrue currentMonkey else testFalse currentMonkey
+  monkeyToUpdate <- find (\m -> index m == monkeyToUpdateIndex) monkeys
+  let updatedMonkeyToUpdate = pushItem monkeyToUpdate worryLevel
 
-    -- prepare results
-    otherMonkeys = filter (\m -> not (index m `elem` [monkeyIndex, monkeyToUpdateIndex])) monkeys
-    updatedMonkeyList = [updatedCurrentMonkey, updatedMonkeyToUpdate] ++ otherMonkeys
-    nextMonkeyIndex = 
-      if null (items updatedCurrentMonkey)
-      then
-        if monkeyIndex < (length monkeys - 1) 
-        then -1
-        else monkeyIndex + 1 
-      else monkeyIndex
-    
+  -- prepare results
+  let otherMonkeys = filter (\m -> not ((index m) `elem` [monkeyIndex, monkeyToUpdateIndex])) monkeys
+  let updatedMonkeyList = [updatedCurrentMonkey, updatedMonkeyToUpdate] ++ otherMonkeys
+  let nextMonkeyIndex = if items updatedCurrentMonkey == [] then if monkeyIndex + 1 < length monkeys then monkeyIndex + 1 else -1 else monkeyIndex
+  
+  return (updatedMonkeyList, nextMonkeyIndex)
+
+-- turnLoop :: Int -> [Monkey] -> IO()
+-- turnLoop monkeyIndex monkeys = do
+--   (updatedMonkeys, nextIndex) <- runTurnForMonkey monkeyIndex monkeys
+--   print (show nextIndex)
+--   return ()
+--   -- return (if not (nextIndex == -1)
+--   --   then turnLoop nextIndex updatedMonkeys
+--   --   else updatedMonkeys)
 
 parseMonkey :: String -> Monkey
 parseMonkey str = Monkey { index=index, items=items, operation=operation, test=test, testTrue=testTrue, testFalse=testFalse }
@@ -115,8 +118,18 @@ main = do
   -- part 1
   let rawMonkeyStrings = splitOn ("\n\n") contents
   let monkeys = map parseMonkey rawMonkeyStrings
-  let (updatedMonkeys, nextMonkeyIndex) = runTurnForMonkey monkeys 0
-  print nextMonkeyIndex
+  -- let updatedMonkeys = turnLoop 0 monkeys
+  let result = runTurnForMonkey 0 monkeys
+
+  -- case result of 
+  --   (Just (updatedMonkeys, nextIndex)) -> mapM print updatedMonkeys
+  --   Nothing -> mapM print "OOPS"
+  
+  -- mapM print updatedMonkeys
+  -- let first_monkey = head monkeys
+  -- let op = convertOperationToExpression (operation first_monkey) 79
+  -- print op
+  -- print (computeWorryLevel (head monkeys) 79)
 
   -- tidy up
   hClose handle
