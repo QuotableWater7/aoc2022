@@ -72,26 +72,15 @@ removeFirstItem :: Monkey -> (Int, Monkey)
 removeFirstItem monkey = (item, updatedMonkey)
   where
     item = (head . items) monkey
-    updatedMonkey = Monkey { 
-      index = index monkey, 
+    updatedMonkey = monkey { 
       items = (tail . items) monkey,
-      numberOfUpdates = (numberOfUpdates monkey) + 1,
-      operation = operation monkey,
-      test = test monkey,
-      testTrue = testTrue monkey,
-      testFalse = testFalse monkey
+      numberOfUpdates = (numberOfUpdates monkey) + 1
     }
 
 -- Adds an item to a monkey's item list
 pushItem :: Monkey -> Int -> Monkey
-pushItem monkey item = Monkey { 
-  index = index monkey, 
-  items = (items monkey) ++ [item],
-  numberOfUpdates = numberOfUpdates monkey,
-  operation = operation monkey,
-  test = test monkey,
-  testTrue = testTrue monkey,
-  testFalse = testFalse monkey
+pushItem monkey item = monkey { 
+  items = (items monkey) ++ [item] 
 }
 
 computeWorryLevel :: Monkey -> Int -> Int
