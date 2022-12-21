@@ -4,10 +4,40 @@ import Data.List
 import Data.List.Split
 import Data.Function
 
+-- basic types
 data Variable = DynamicValue | HardcodedValue Int deriving(Show)
-data OpType = Multiply | Add
+data OpType = Multiply | Add deriving(Show)
+
+-- operation
 data Operation = Operation OpType Variable Variable
+
+instance Show Operation where
+  show (Operation opType var1 var2) = "Op: " ++ (show opType) ++ " (" ++ (show var1) ++ ", " ++ (show var2) ++ ")"
+  
+-- expression
 data Expression = Expression OpType Int Int
+
+instance Show Expression where
+  show (Expression opType value1 value2) = "Exp: " ++ (show opType) ++ " (" ++ (show value1) ++ ", " ++ (show value2) ++ ")"
+
+insertAt :: a -> Int -> [a] -> [a]
+insertAt newElement 0 as = newElement:as
+insertAt newElement i (a:as) = a : insertAt newElement (i - 1) as
+
+-- monkey
+data Monkey = Monkey {
+  index :: Int,
+  items :: [Int],
+  operation :: Operation,
+  test :: Int -> Bool,
+  testTrue :: Int,
+  testFalse :: Int
+}
+
+instance Show Monkey where
+  show m = "Monkey: \n" ++ "\tIndex:\t" ++ show (index m) ++ "\n\tItems:\t" ++ show (items m) ++ "\n\t" ++ (show . operation $ m) ++ "\n\tTest True:\t" ++ show (testTrue m) ++ "\n\tTest False:\t" ++ show (testFalse m) ++ "\n"
+
+-- helpers
 
 makeOperation :: String -> String -> String -> Operation
 makeOperation opStr str1 str2 = Operation opType var1 var2
@@ -26,15 +56,6 @@ convertOperationToExpression (Operation opType var1 var2) value = Expression opT
 processExpression :: Expression -> Int
 processExpression (Expression Add x y) = x + y
 processExpression (Expression Multiply x y) = x * y
-
-data Monkey = Monkey {
-  index :: Int,
-  items :: [Int],
-  operation :: Operation,
-  test :: Int -> Bool,
-  testTrue :: Int,
-  testFalse :: Int
-}
 
 removeFirstItem :: Monkey -> (Int, Monkey)
 removeFirstItem monkey = (item, updatedMonkey)
@@ -65,36 +86,37 @@ computeWorryLevel monkey item = result
     worryLevelAfterInspection = processExpression $ convertOperationToExpression (operation monkey) item
     result = floor ((fromIntegral worryLevelAfterInspection) / 3)
 
-instance Show Monkey where
-  show m = show (index m) ++ "/" ++ show (items m) ++ "/" ++ show (testTrue m) ++ "/" ++ show (testFalse m)
+runTest :: Monkey -> Int -> Int
+runTest monkey worry_level = do
+  case test monkey $ worry_level of
+    True -> testTrue monkey
+    False -> testFalse monkey
 
-runTurnForMonkey :: Int -> [Monkey] -> Maybe ([Monkey], Int)
-runTurnForMonkey monkeyIndex monkeys = do
-  -- current monkey
-  currentMonkey <- find (\m -> index m == monkeyIndex) monkeys
-  let (item, updatedCurrentMonkey) = removeFirstItem currentMonkey
-  let worryLevel = computeWorryLevel currentMonkey item
-
-  -- monkey to update
-  let monkeyToUpdateIndex = if test currentMonkey worryLevel then testTrue currentMonkey else testFalse currentMonkey
-  monkeyToUpdate <- find (\m -> index m == monkeyToUpdateIndex) monkeys
-  let updatedMonkeyToUpdate = pushItem monkeyToUpdate worryLevel
-
-  -- prepare results
-  let otherMonkeys = filter (\m -> not ((index m) `elem` [monkeyIndex, monkeyToUpdateIndex])) monkeys
-  let updatedMonkeyList = [updatedCurrentMonkey, updatedMonkeyToUpdate] ++ otherMonkeys
-  let nextMonkeyIndex = if items updatedCurrentMonkey == [] then if monkeyIndex + 1 < length monkeys then monkeyIndex + 1 else -1 else monkeyIndex
+removeMonkeyAtIndex :: Int -> [Monkey] -> (Monkey, [Monkey])
+removeMonkeyAtIndex i [] = error ("Did not find monkey at index " ++ (show i))
+removeMonkeyAtIndex i monkeys = 
+  case find ((== i) . index) monkeys of 
+    Nothing -> error "no monke"
+    Just m -> (m, filter (not . (== i) . index) monkeys)
   
-  return (updatedMonkeyList, nextMonkeyIndex)
+runTurnForMonkeys :: Int -> [Monkey] -> [Monkey]
+runTurnForMonkeys i monkeys
+  | i == (length monkeys)           = monkeys
+  | items monkey_to_update == []    = runTurnForMonkeys (i + 1) monkeys
+  | otherwise                       = do
+    let (item, updated_monkey) = removeFirstItem monkey_to_update
+    let worry_level = computeWorryLevel monkey_to_update item
 
--- turnLoop :: Int -> [Monkey] -> IO()
--- turnLoop monkeyIndex monkeys = do
---   (updatedMonkeys, nextIndex) <- runTurnForMonkey monkeyIndex monkeys
---   print (show nextIndex)
---   return ()
---   -- return (if not (nextIndex == -1)
---   --   then turnLoop nextIndex updatedMonkeys
---   --   else updatedMonkeys)
+    let monkey_to_update_index = runTest monkey_to_update worry_level
+    let (other_monkey_to_update, untouched_monkeys) = removeMonkeyAtIndex monkey_to_update_index other_monkeys
+    let updated_other_monkey_to_update = pushItem other_monkey_to_update worry_level
+    runTurnForMonkeys i ([updated_monkey, updated_other_monkey_to_update] ++ untouched_monkeys)
+  where
+    (monkey_to_update, other_monkeys) = removeMonkeyAtIndex i monkeys
+
+runRoundsForMonkeys :: Int -> [Monkey] -> [Monkey]
+runRoundsForMonkeys 0 monkeys = monkeys
+runRoundsForMonkeys round monkeys = runRoundsForMonkeys (round - 1) (runTurnForMonkeys 0 monkeys)
 
 parseMonkey :: String -> Monkey
 parseMonkey str = Monkey { index=index, items=items, operation=operation, test=test, testTrue=testTrue, testFalse=testFalse }
@@ -102,7 +124,7 @@ parseMonkey str = Monkey { index=index, items=items, operation=operation, test=t
     index = ((read :: String -> Int) . last . head) (str =~ "Monkey ([0-9]+):"::[[String]])
     items = ((map (read :: String->Int)) . (splitOn ", ") . last . head) (str =~ "Starting items: (.*)"::[[String]])
     opType = (last . head) (str =~ "Operation:.*([+*]).*"::[[String]])
-    var1 = (last . head) (str =~ "Operation:.*([a-z0-9]+) [+*].*"::[[String]])
+    var1 = (last . head) (str =~ "Operation:.* = ([a-z0-9]+) [+*].*"::[[String]])
     var2 = (last . head) (str =~ "Operation:.*[+*] ([a-z0-9]+).*"::[[String]])
     operation = makeOperation opType var1 var2
     divisible_by = ((read :: String->Int) . last . head) (str =~ "Test: divisible by ([0-9]+)"::[[String]])
@@ -118,18 +140,16 @@ main = do
   -- part 1
   let rawMonkeyStrings = splitOn ("\n\n") contents
   let monkeys = map parseMonkey rawMonkeyStrings
-  -- let updatedMonkeys = turnLoop 0 monkeys
-  let result = runTurnForMonkey 0 monkeys
+  let updated_monkeys = runRoundsForMonkeys 20 monkeys
+  mapM print updated_monkeys
 
+  -- debugging
+  -- let result = runTurnForMonkey 0 monkeys
   -- case result of 
-  --   (Just (updatedMonkeys, nextIndex)) -> mapM print updatedMonkeys
-  --   Nothing -> mapM print "OOPS"
-  
-  -- mapM print updatedMonkeys
-  -- let first_monkey = head monkeys
-  -- let op = convertOperationToExpression (operation first_monkey) 79
-  -- print op
-  -- print (computeWorryLevel (head monkeys) 79)
+  --   (Just (updatedMonkeys, nextIndex)) -> do
+  --     print $ show nextIndex
+  --     -- mapM print updatedMonkeys
+  --   Nothing -> print "YO"
 
   -- tidy up
   hClose handle
