@@ -118,8 +118,11 @@ removeMonkeyAtIndex i monkeys =
 -- Run a single round across all monkeys
 runRound :: Int -> [Monkey] -> [Monkey]
 runRound i monkeys
-  | i == (length monkeys)           = monkeys
-  | items monkey_to_update == []    = runRound (i + 1) monkeys
+    -- Base case: the round is over when the monkey index matches the number of monkeys
+  | i == (length monkeys)           = monkeys                  
+    -- Base case: when there are no more items for the current monkey, increase the monkey index
+  | items monkey_to_update == []    = runRound (i + 1) monkeys 
+    -- Happy path: pull an item off the current monkey, process it, and add to another monkey
   | otherwise                       = do
     let (item, updated_monkey) = removeFirstItem monkey_to_update
     let worry_level = computeWorryLevel monkey_to_update item
