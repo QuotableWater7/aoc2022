@@ -104,29 +104,37 @@ removeMonkeyAtIndex i monkeys =
     Nothing -> error "no monke"
     Just m -> (m, filter (not . (== i) . index) monkeys)
 
--- Run a single round across all monkeys
-runRound :: Int -> [Monkey] -> [Monkey]
-runRound i monkeys
-    -- Base case: the round is over when the monkey index matches the number of monkeys
-  | i == (length monkeys)           = monkeys                  
-    -- Base case: when there are no more items for the current monkey, increase the monkey index
-  | items monkey_to_update == []    = runRound (i + 1) monkeys 
-    -- Happy path: pull an item off the current monkey, process it, and add to another monkey
-  | otherwise                       = do
-    let (item, updated_monkey) = removeFirstItem monkey_to_update
-    let worry_level = computeWorryLevel monkey_to_update item
+getMonkeyAtIndex :: Int -> [Monkey] -> Monkey
+getMonkeyAtIndex i monkeys = do
+  let monkey = find (\m -> index m == i) monkeys
+  case monkey of
+    Nothing -> error "invalid index for monkey"
+    Just m -> m
 
-    let monkey_to_update_index = getMonkeyIndexToThrowTo monkey_to_update worry_level
-    let (other_monkey_to_update, untouched_monkeys) = removeMonkeyAtIndex monkey_to_update_index other_monkeys
-    let updated_other_monkey_to_update = pushItem other_monkey_to_update worry_level
-    runRound i ([updated_monkey, updated_other_monkey_to_update] ++ untouched_monkeys)
+-- Run a single round across all monkeys
+runRound :: [Monkey] -> [Monkey]
+runRound monkeys = runRoundHelper 0 monkeys
   where
-    (monkey_to_update, other_monkeys) = removeMonkeyAtIndex i monkeys
+    runRoundHelper i monkeys
+        -- Base case: the round is over when the monkey index matches the number of monkeys
+      | i == (length monkeys)           = monkeys                  
+        -- Base case: when there are no more items for the current monkey, increase the monkey index
+      | items (getMonkeyAtIndex i monkeys) == []    = runRoundHelper (i + 1) monkeys 
+        -- Happy path: pull an item off the current monkey, process it, and add to another monkey
+      | otherwise                       = do
+        let (monkey_to_update, other_monkeys) = removeMonkeyAtIndex i monkeys
+        let (item, updated_monkey) = removeFirstItem monkey_to_update
+        let worry_level = computeWorryLevel monkey_to_update item
+
+        let monkey_to_update_index = getMonkeyIndexToThrowTo monkey_to_update worry_level
+        let (other_monkey_to_update, untouched_monkeys) = removeMonkeyAtIndex monkey_to_update_index other_monkeys
+        let updated_other_monkey_to_update = pushItem other_monkey_to_update worry_level
+        runRoundHelper i ([updated_monkey, updated_other_monkey_to_update] ++ untouched_monkeys)
 
 -- Run arbitrary number of rounds of monkey turns
 runRounds :: Int -> [Monkey] -> [Monkey]
 runRounds 0 monkeys = monkeys
-runRounds round monkeys = runRounds (round - 1) (runRound 0 monkeys)
+runRounds round monkeys = runRounds (round - 1) (runRound monkeys)
 
 main = do
   -- read input
