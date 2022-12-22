@@ -72,8 +72,8 @@ removeFirstItem monkey = (item, updatedMonkey)
     }
 
 -- Adds an item to a monkey's item list
-pushItem :: Monkey -> Int -> Monkey
-pushItem monkey item = monkey { 
+pushItem :: Int -> Monkey -> Monkey
+pushItem item monkey = monkey { 
   items = (items monkey) ++ [item] 
 }
 
@@ -98,6 +98,12 @@ removeMonkeyWithIndex i monkeys = (monkey_with_index_i, rest_of_monkeys)
     monkey_with_index_i = getMonkeyAtIndex i monkeys
     rest_of_monkeys = filter (not . (== i) . index) monkeys
 
+updateMonkeyAtIndex :: Int -> (Monkey -> Monkey) -> [Monkey] -> [Monkey]
+updateMonkeyAtIndex i updateMonkeyFn monkeys = do
+  let (monkey_to_update, other_monkeys) = removeMonkeyWithIndex i monkeys
+  let updated_monkey = updateMonkeyFn monkey_to_update
+  [updated_monkey] ++ other_monkeys
+
 -- find monkey with the given index
 getMonkeyAtIndex :: Int -> [Monkey] -> Monkey
 getMonkeyAtIndex i monkeys = do
@@ -119,21 +125,29 @@ runRound monkeys = runRoundHelper 0 monkeys
       | items (getMonkeyAtIndex monkey_index monkeys) == [] = runRoundHelper (monkey_index + 1) monkeys 
       -- Happy path: pull an item off the current monkey, process it, and add to another monkey
       | otherwise                                           = do
-        let (monkey_to_update, other_monkeys) = removeMonkeyWithIndex monkey_index monkeys
-        let (item, updated_monkey) = removeFirstItem monkey_to_update
-        let worry_level = computeWorryLevel monkey_to_update item
+        let (source_monkey, other_monkeys) = removeMonkeyWithIndex monkey_index monkeys
+        let (item, updated_monkey) = removeFirstItem source_monkey
+        let worry_level = computeWorryLevel source_monkey item
 
-        let monkey_to_update_index = getMonkeyIndexToThrowTo monkey_to_update worry_level
-        let (other_monkey_to_update, untouched_monkeys) = removeMonkeyWithIndex monkey_to_update_index other_monkeys
-        let updated_other_monkey_to_update = pushItem other_monkey_to_update worry_level
+        let source_monkey_index = getMonkeyIndexToThrowTo source_monkey worry_level
+        let updated_other_monkeys = updateMonkeyAtIndex source_monkey_index (pushItem worry_level) other_monkeys
 
-        let new_monkey_list = [updated_monkey, updated_other_monkey_to_update] ++ untouched_monkeys
+        let new_monkey_list = updated_monkey:updated_other_monkeys
         runRoundHelper monkey_index new_monkey_list
 
 -- Run arbitrary number of rounds of monkey turns
 runRounds :: Int -> [Monkey] -> [Monkey]
 runRounds 0 monkeys = monkeys
 runRounds round monkeys = runRounds (round - 1) (runRound monkeys)
+
+-- Compute the final score
+computeScoreFromRounds :: [Monkey] -> Int
+computeScoreFromRounds monkeys = do
+  let ordered_update_amounts = sortBy (flip compare) $ map numberOfUpdates monkeys
+  let top_2_results = take 2 ordered_update_amounts
+
+  let score = foldr (*) 1 top_2_results
+  score
 
 main = do
   -- read input
@@ -143,9 +157,7 @@ main = do
   -- part 1
   let rawMonkeyStrings = splitOn ("\n\n") contents
   let monkeys = map parseMonkey rawMonkeyStrings
-  let updated_monkeys = runRounds 20 monkeys
-  let number_of_updates = sortBy (flip compare) $ map numberOfUpdates updated_monkeys
-  let answer_part_1 = (foldr (*) 1) . take 2 $ number_of_updates
+  let answer_part_1 = computeScoreFromRounds $ runRounds 20 monkeys
   print answer_part_1
 
   -- part 2
