@@ -16,6 +16,9 @@ data OpType = Multiply | Add deriving(Show)
 -- Operation
 data Operation = Operation OpType Variable Variable
 
+instance Show Operation where
+  show (Operation opType var1 var2) = "Op: " ++ (show opType) ++ " (" ++ (show var1) ++ ", " ++ (show var2) ++ ")"
+
 makeOperation :: String -> String -> String -> Operation
 makeOperation opStr str1 str2 = Operation opType var1 var2
   where
@@ -23,21 +26,9 @@ makeOperation opStr str1 str2 = Operation opType var1 var2
     var1 = if str1 == "old" then DynamicValue else HardcodedValue ((read str2)::Int)
     var2 = if str2 == "old" then DynamicValue else HardcodedValue ((read str2)::Int)
 
-convertOperationToExpression :: Operation -> Int -> Expression
-convertOperationToExpression (Operation opType var1 var2) value = Expression opType (hydrateVariable var1 value) (hydrateVariable var2 value)
-
-instance Show Operation where
-  show (Operation opType var1 var2) = "Op: " ++ (show opType) ++ " (" ++ (show var1) ++ ", " ++ (show var2) ++ ")"
-  
--- expression
-data Expression = Expression OpType Int Int
-
-instance Show Expression where
-  show (Expression opType value1 value2) = "Exp: " ++ (show opType) ++ " (" ++ (show value1) ++ ", " ++ (show value2) ++ ")"
-
-processExpression :: Expression -> Int
-processExpression (Expression Add x y) = x + y
-processExpression (Expression Multiply x y) = x * y
+solveOperation :: Operation -> Int -> Int
+solveOperation (Operation Add var1 var2) value = (hydrateVariable var1 value) + (hydrateVariable var2 value)
+solveOperation (Operation Multiply var1 var2) value = (hydrateVariable var1 value) * (hydrateVariable var2 value)
 
 -- Monkey
 data Monkey = Monkey {
@@ -86,7 +77,7 @@ pushItem monkey item = monkey {
 computeWorryLevel :: Monkey -> Int -> Int
 computeWorryLevel monkey item = result
   where
-    worryLevelAfterInspection = processExpression $ convertOperationToExpression (operation monkey) item
+    worryLevelAfterInspection = solveOperation (operation monkey) item
     result = floor ((fromIntegral worryLevelAfterInspection) / 3)
 
 -- Determine index of monkey to throw to next
@@ -104,7 +95,7 @@ removeMonkeyWithIndex i monkeys = (monkey_with_index_i, rest_of_monkeys)
     monkey_with_index_i = getMonkeyAtIndex i monkeys
     rest_of_monkeys = filter (not . (== i) . index) monkeys
 
--- find monnkey with the given index
+-- find monkey with the given index
 getMonkeyAtIndex :: Int -> [Monkey] -> Monkey
 getMonkeyAtIndex i monkeys = do
   let monkey = find (\m -> index m == i) monkeys
