@@ -50,16 +50,16 @@ instance Show Monkey where
 parseMonkey :: String -> Monkey
 parseMonkey str = Monkey { index=index, items=items, numberOfUpdates=0, operation=operation, test=test, testTrue=testTrue, testFalse=testFalse }
   where
-    index = ((read :: String -> Int) . last . head) (str =~ "Monkey ([0-9]+):"::[[String]])
-    items = ((map (read :: String->Int)) . (splitOn ", ") . last . head) (str =~ "Starting items: (.*)"::[[String]])
+    index = (read . last . head) (str =~ "Monkey ([0-9]+):"::[[String]])
+    items = ((map read) . (splitOn ", ") . last . head) (str =~ "Starting items: (.*)"::[[String]])
     opType = (last . head) (str =~ "Operation:.*([+*]).*"::[[String]])
     var1 = (last . head) (str =~ "Operation:.* = ([a-z0-9]+) [+*].*"::[[String]])
     var2 = (last . head) (str =~ "Operation:.*[+*] ([a-z0-9]+).*"::[[String]])
     operation = makeOperation opType var1 var2
-    divisible_by = ((read :: String->Int) . last . head) (str =~ "Test: divisible by ([0-9]+)"::[[String]])
+    divisible_by = (read . last . head) (str =~ "Test: divisible by ([0-9]+)"::[[String]])
     test = (== 0) . (`mod` divisible_by)
-    testTrue = ((read :: String->Int) . last . head) (str =~ "If true: throw to monkey ([0-9]+)"::[[String]])
-    testFalse = ((read :: String->Int) . last . head) (str =~ "If false: throw to monkey ([0-9]+)"::[[String]])
+    testTrue = (read . last . head) (str =~ "If true: throw to monkey ([0-9]+)"::[[String]])
+    testFalse = (read . last . head) (str =~ "If false: throw to monkey ([0-9]+)"::[[String]])
 
 -- Remove the first item, which in turn increments the number of updates to the monkey
 removeFirstItem :: Monkey -> (Int, Monkey)
