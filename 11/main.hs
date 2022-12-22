@@ -7,11 +7,18 @@ import Data.Function
 -- Variable
 data Variable = DynamicValue | HardcodedValue Int deriving(Show)
 
+parseVariable :: String -> Variable
+parseVariable var = if var == "old" then DynamicValue else HardcodedValue (read var)
+
 hydrateVariable :: Variable -> Int -> Int
 hydrateVariable (HardcodedValue hv) _ = hv
 hydrateVariable (DynamicValue) value = value
 
+-- OpType
 data OpType = Multiply | Add deriving(Show)
+
+parseOpType :: String -> OpType
+parseOpType op = if op == "+" then Add else Multiply
 
 -- Operation
 data Operation = Operation OpType Variable Variable
@@ -20,11 +27,7 @@ instance Show Operation where
   show (Operation opType var1 var2) = "Op: " ++ (show opType) ++ " (" ++ (show var1) ++ ", " ++ (show var2) ++ ")"
 
 makeOperation :: String -> String -> String -> Operation
-makeOperation opStr str1 str2 = Operation opType var1 var2
-  where
-    opType = if opStr == "+" then Add else Multiply
-    var1 = if str1 == "old" then DynamicValue else HardcodedValue ((read str2)::Int)
-    var2 = if str2 == "old" then DynamicValue else HardcodedValue ((read str2)::Int)
+makeOperation op var1 var2 = Operation (parseOpType op) (parseVariable var1) (parseVariable var2)
 
 solveOperation :: Operation -> Int -> Int
 solveOperation (Operation Add var1 var2) value = (hydrateVariable var1 value) + (hydrateVariable var2 value)
@@ -102,6 +105,8 @@ getMonkeyAtIndex i monkeys = do
   case monkey of
     Nothing -> error "invalid index for monkey"
     Just m -> m
+
+-- MAIN HELPERS
 
 -- Run a single round across all monkeys
 runRound :: [Monkey] -> [Monkey]
