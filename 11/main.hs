@@ -148,5 +148,8 @@ main = do
   let answer_part_1 = (foldr (*) 1) . take 2 $ number_of_updates
   print answer_part_1
 
+  -- part 2
+  -- remove "divide by 3", instead modulo the worry level based on the LCM of the "divisible by" values
+
   -- tidy up
   hClose handle
