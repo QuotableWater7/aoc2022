@@ -70,11 +70,13 @@ parseMonkey str = Monkey {
     var2 = (last . head) (str =~ "Operation:.*[+*] ([a-z0-9]+).*"::[[String]])
     divisible_by = (read . last . head) (str =~ "Test: divisible by ([0-9]+)"::[[String]])
 
--- Remove the first item, which in turn increments the number of updates to the monkey
-removeFirstItem :: Monkey -> (Int, Monkey)
-removeFirstItem monkey = (item, updatedMonkey)
+-- Inspect the first item, which in turn increments the number of updates to the monkey
+inspectFirstItem :: Monkey -> (Int, Monkey)
+inspectFirstItem monkey = (worry_level, updatedMonkey)
   where
     item = (head . items) monkey
+    worry_level = computeWorryLevel monkey item
+    
     updatedMonkey = monkey { 
       items = (tail . items) monkey,
       numberOfUpdates = (numberOfUpdates monkey) + 1
@@ -135,8 +137,7 @@ runRound monkeys = runRoundHelper 0 monkeys
       -- Happy path: pull an item off the current monkey, process it, and add to another monkey
       | otherwise                                           = do
         let (source_monkey, other_monkeys) = removeMonkeyWithIndex monkey_index monkeys
-        let (item, updated_monkey) = removeFirstItem source_monkey
-        let worry_level = computeWorryLevel source_monkey item
+        let (worry_level, updated_monkey) = inspectFirstItem source_monkey
 
         let source_monkey_index = getMonkeyIndexToThrowTo source_monkey worry_level
         let updated_other_monkeys = updateMonkeyAtIndex source_monkey_index (pushItem worry_level) other_monkeys
