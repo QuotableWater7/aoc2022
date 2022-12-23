@@ -15,10 +15,14 @@ hydrateVariable (HardcodedValue hv) _ = hv
 hydrateVariable (DynamicValue) value = value
 
 -- OpType
-data OpType = Multiply | Add deriving(Show)
+data OpType = Add | Multiply deriving(Show)
 
 parseOpType :: String -> OpType
-parseOpType op = if op == "+" then Add else Multiply
+parseOpType op = if op == "+" then Add else if op == "*" then Multiply else error "Invalid opType"
+
+getOperator :: OpType -> (Int -> Int -> Int)
+getOperator Add = (+)
+getOperator Multiply = (*)
 
 -- Operation
 data Operation = Operation OpType Variable Variable
@@ -30,8 +34,11 @@ makeOperation :: String -> String -> String -> Operation
 makeOperation op var1 var2 = Operation (parseOpType op) (parseVariable var1) (parseVariable var2)
 
 solveOperation :: Operation -> Int -> Int
-solveOperation (Operation Add var1 var2) value = (hydrateVariable var1 value) + (hydrateVariable var2 value)
-solveOperation (Operation Multiply var1 var2) value = (hydrateVariable var1 value) * (hydrateVariable var2 value)
+solveOperation (Operation op var1 var2) value = opFunc hydratedVar1 hydratedVar2
+  where
+    opFunc = getOperator op
+    hydratedVar1 = hydrateVariable var1 value
+    hydratedVar2 = hydrateVariable var2 value
 
 -- Monkey
 data Monkey = Monkey {
