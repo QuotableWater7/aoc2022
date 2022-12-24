@@ -19,9 +19,9 @@ makeStackList 1 = [Stack ""]
 makeStackList n = makeStackList (n - 1) ++ [Stack ""]
 
 popStackAtIndex :: Int -> [Stack Char] -> (Char, [Stack Char])
-popStackAtIndex i stacks = ((fst . popStack) stack, updatedStacks)
+popStackAtIndex i stacks = (char, updatedStacks)
   where
-    stack = stacks!!(i - 1)
+    char = (fst . popStack) stacks!!(i - 1)
     updatedStacks = updateStackAtIndex i (\(Stack (x:xs)) -> Stack xs) stacks
 
 pushStackAtIndex :: Int -> Char -> [Stack Char] -> [Stack Char]
@@ -39,9 +39,9 @@ data Move = Move { sourceIndex :: Int, destIndex :: Int, amount :: Int } derivin
 
 parseMove :: String -> Move
 parseMove str = Move {
-  amount=read . last $ amount,
-  sourceIndex=read . last $ sourceIndex,
-  destIndex=read . last $ destIndex
+  amount = read . last $ amount,
+  sourceIndex = read . last $ sourceIndex,
+  destIndex = read . last $ destIndex
 }
   where
    [amount, sourceIndex, destIndex]= (str =~ "([0-9]+)"::[[String]])
