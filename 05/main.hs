@@ -95,14 +95,14 @@ initializeMoves str = do
   let lines = splitOn "\n" str
   map parseMove lines
 
-applyMove :: Move -> [Stack Char] -> [Stack Char]
-applyMove move stacks
+applyMoveV1 :: Move -> [Stack Char] -> [Stack Char]
+applyMoveV1 move stacks
   | amt == 0      = stacks
   | otherwise     = do
     let (char, updatedStacks) = popStackAtIndex src stacks
     let updatedStacks' = pushStackAtIndex dest char updatedStacks
     let next_move = move { amount = amt - 1 }
-    applyMove next_move updatedStacks'
+    applyMoveV1 next_move updatedStacks'
   where
     amt = amount move
     src = sourceIndex move
@@ -119,10 +119,9 @@ applyMoveV2 move stacks
     src = sourceIndex move
     dest = destIndex move
 
-applyMoves :: [Move] -> [Stack Char] -> [Stack Char]
-applyMoves [] stacks = stacks
--- change applyMove to applyMoveV2 for part 2
-applyMoves (m:ms) stacks = applyMoves ms (applyMove m stacks)
+applyMoves :: [Move] -> (Move -> [Stack Char] -> [Stack Char]) -> [Stack Char] -> [Stack Char]
+applyMoves [] _ stacks = stacks
+applyMoves (m:ms) applyMove stacks = applyMoves ms applyMove (applyMove m stacks)
 
 main = do
   -- read input
@@ -135,8 +134,12 @@ main = do
   let moves = initializeMoves movesStr
   let stacks = initializeStacks gameStateStr
 
-  let updatedStacks = applyMoves moves stacks
+  let updatedStacks = applyMoves moves applyMoveV1 stacks
   print updatedStacks
+
+  -- part 2
+  let updatedStacksPart2 = applyMoves moves applyMoveV2 stacks
+  print updatedStacksPart2
 
   -- tidy up
   hClose handle
