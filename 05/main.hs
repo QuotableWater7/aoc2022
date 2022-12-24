@@ -5,6 +5,8 @@ import Data.List.Split
 import Text.Regex.TDFA
 
 -- Stack
+-- The data structure is generic but most of the supporting functions
+-- for AoC depend specifically on Char/String behavior
 data Stack a = Stack [a] deriving(Show)
 
 pushStack :: a -> Stack a -> Stack a
@@ -14,11 +16,10 @@ popStack :: Stack a -> (a, Stack a)
 popStack (Stack []) = error "empty stack"
 popStack (Stack (x:xs)) = (x, Stack xs)
 
+-- for part 1
 makeStackList :: Int -> [Stack Char]
 makeStackList 1 = [Stack ""]
 makeStackList n = makeStackList (n - 1) ++ [Stack ""]
-
--- for part 1
 
 popStackAtIndex :: Int -> [Stack Char] -> (Char, [Stack Char])
 popStackAtIndex n [] = error "No stacks"
@@ -123,6 +124,12 @@ applyMoves :: [Move] -> (Move -> [Stack Char] -> [Stack Char]) -> [Stack Char] -
 applyMoves [] _ stacks = stacks
 applyMoves (m:ms) applyMove stacks = applyMoves ms applyMove (applyMove m stacks)
 
+getHeadOfStacks :: [Stack Char] -> String
+getHeadOfStacks [] = []
+getHeadOfStacks (x:xs) = do
+  let (char, updatedStack) = popStack x
+  char : (getHeadOfStacks xs)
+
 main = do
   -- read input
   handle <- openFile "/Users/josephbowler/agora/aoc2022/05/input.txt" ReadMode
@@ -134,12 +141,12 @@ main = do
   let moves = initializeMoves movesStr
   let stacks = initializeStacks gameStateStr
 
-  let updatedStacks = applyMoves moves applyMoveV1 stacks
-  print updatedStacks
+  let updatedStacksPart1 = applyMoves moves applyMoveV1 stacks
+  print $ getHeadOfStacks updatedStacksPart1
 
   -- part 2
   let updatedStacksPart2 = applyMoves moves applyMoveV2 stacks
-  print updatedStacksPart2
+  print $ getHeadOfStacks updatedStacksPart2
 
   -- tidy up
   hClose handle
