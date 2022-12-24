@@ -18,16 +18,33 @@ makeStackList :: Int -> [Stack Char]
 makeStackList 1 = [Stack ""]
 makeStackList n = makeStackList (n - 1) ++ [Stack ""]
 
+-- for part 1
+
 popStackAtIndex :: Int -> [Stack Char] -> (Char, [Stack Char])
+popStackAtIndex n [] = error "No stacks"
 popStackAtIndex i stacks = (char, updatedStacks)
   where
-    char = (fst . popStack) stacks!!(i - 1)
+    char = (fst . popStack) (stacks!!(i - 1))
     updatedStacks = updateStackAtIndex i (\(Stack (x:xs)) -> Stack xs) stacks
 
 pushStackAtIndex :: Int -> Char -> [Stack Char] -> [Stack Char]
 pushStackAtIndex 1 char ((Stack xs):stacks) = Stack (char:xs) : stacks
 pushStackAtIndex n char (s:stacks) = s : pushStackAtIndex (n - 1) char stacks
 pushStackAtIndex n ch stacks = error $ "Error: reached " ++ (show n) ++ [ch]
+
+-- for part 2
+popStackAtIndexV2 :: Int -> Int -> [Stack Char] -> ([Char], [Stack Char])
+popStackAtIndexV2 i amount stacks = popStacksAtIndexHelper i amount [] stacks
+  where
+    popStacksAtIndexHelper i 0 chars stacks = (chars, stacks)
+    popStacksAtIndexHelper i n chars stacks = do
+      let (char, updatedStacks) = popStackAtIndex i stacks
+      popStacksAtIndexHelper i (n - 1) (chars ++ [char]) updatedStacks
+
+pushStackAtIndexV2 :: Int -> [Char] -> [Stack Char] -> [Stack Char]
+pushStackAtIndexV2 i chars stacks = do
+  updateStackAtIndex i (\(Stack xs) -> Stack (chars ++ xs)) stacks
+
 
 updateStackAtIndex :: Int -> (Stack a -> Stack a) -> [Stack a] -> [Stack a]
 updateStackAtIndex _ _ [] = []
@@ -91,8 +108,20 @@ applyMove move stacks
     src = sourceIndex move
     dest = destIndex move
 
+applyMoveV2 :: Move -> [Stack Char] -> [Stack Char]
+applyMoveV2 move stacks
+  | amt == 0      = stacks
+  | otherwise     = do
+    let (chars, updatedStacks) = popStackAtIndexV2 src amt stacks
+    pushStackAtIndexV2 dest chars updatedStacks
+  where
+    amt = amount move
+    src = sourceIndex move
+    dest = destIndex move
+
 applyMoves :: [Move] -> [Stack Char] -> [Stack Char]
 applyMoves [] stacks = stacks
+-- change applyMove to applyMoveV2 for part 2
 applyMoves (m:ms) stacks = applyMoves ms (applyMove m stacks)
 
 main = do
