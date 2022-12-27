@@ -102,53 +102,55 @@ getMonkeyIndexToThrowTo monkey worry_level = do
     False -> testFalse monkey
 
 -- Given an index and a list of monkeys, return tuple with the found monkey and the remaining monkeys
-removeMonkeyWithIndex :: Int -> [Monkey] -> (Monkey, [Monkey])
-removeMonkeyWithIndex i [] = error ("Did not find monkey at index " ++ (show i))
-removeMonkeyWithIndex i monkeys = (monkey_with_index_i, rest_of_monkeys)
-  where
-    monkey_with_index_i = getMonkeyAtIndex i monkeys
-    rest_of_monkeys = filter (not . (== i) . index) monkeys
+removeMonkeyWithIndex :: Int -> [Monkey] -> Maybe (Monkey, [Monkey])
+removeMonkeyWithIndex i monkeys = do
+  monkey_with_index_i <- getMonkeyAtIndex i monkeys
+  let rest_of_monkeys = filter (not . (== i) . index) monkeys
 
-updateMonkeyAtIndex :: Int -> (Monkey -> Monkey) -> [Monkey] -> [Monkey]
+  return (monkey_with_index_i, rest_of_monkeys)
+
+updateMonkeyAtIndex :: Int -> (Monkey -> Monkey) -> [Monkey] -> Maybe [Monkey]
 updateMonkeyAtIndex i updateMonkeyFn monkeys = do
-  let (monkey_to_update, other_monkeys) = removeMonkeyWithIndex i monkeys
+  (monkey_to_update, other_monkeys) <- removeMonkeyWithIndex i monkeys
   let updated_monkey = updateMonkeyFn monkey_to_update
-  [updated_monkey] ++ other_monkeys
+  return $ [updated_monkey] ++ other_monkeys
 
 -- find monkey with the given index
-getMonkeyAtIndex :: Int -> [Monkey] -> Monkey
+getMonkeyAtIndex :: Int -> [Monkey] -> Maybe Monkey
 getMonkeyAtIndex i monkeys = do
-  let monkey = find (\m -> index m == i) monkeys
-  case monkey of
-    Nothing -> error "invalid index for monkey"
-    Just m -> m
+  monkey <- find (\m -> index m == i) monkeys
+  return monkey
 
 -- MAIN HELPERS
 
 -- Run a single round across all monkeys
-runRound :: [Monkey] -> [Monkey]
+runRound :: [Monkey] -> Maybe [Monkey]
 runRound monkeys = runRoundHelper 0 monkeys
   where
     runRoundHelper monkey_index monkeys
       -- Base case: the round is over when the monkey index matches the number of monkeys
-      | monkey_index == (length monkeys)                    = monkeys                  
-      -- Base case: when there are no more items for the current monkey, increase the monkey index
-      | items (getMonkeyAtIndex monkey_index monkeys) == [] = runRoundHelper (monkey_index + 1) monkeys 
-      -- Happy path: pull an item off the current monkey, process it, and add to another monkey
+      | monkey_index == (length monkeys)                    = Just monkeys                  
       | otherwise                                           = do
-        let (source_monkey, other_monkeys) = removeMonkeyWithIndex monkey_index monkeys
-        let (worry_level, updated_monkey) = inspectFirstItem source_monkey
+        (source_monkey, other_monkeys) <- removeMonkeyWithIndex monkey_index monkeys
 
-        let source_monkey_index = getMonkeyIndexToThrowTo source_monkey worry_level
-        let updated_other_monkeys = updateMonkeyAtIndex source_monkey_index (pushItem worry_level) other_monkeys
+        if (null (items source_monkey))
+          then runRoundHelper (monkey_index + 1) monkeys
+          else do
+            let (worry_level, updated_monkey) = inspectFirstItem source_monkey
 
-        let new_monkey_list = updated_monkey:updated_other_monkeys
-        runRoundHelper monkey_index new_monkey_list
+            -- Happy path: pull an item off the current monkey, process it, and add to another monkey
+            let source_monkey_index = getMonkeyIndexToThrowTo source_monkey worry_level
+            updated_other_monkeys <- updateMonkeyAtIndex source_monkey_index (pushItem worry_level) other_monkeys
+
+            let new_monkey_list = updated_monkey:updated_other_monkeys
+            runRoundHelper monkey_index new_monkey_list
 
 -- Run arbitrary number of rounds of monkey turns
-runRounds :: Int -> [Monkey] -> [Monkey]
-runRounds 0 monkeys = monkeys
-runRounds round monkeys = runRounds (round - 1) (runRound monkeys)
+runRounds :: Int -> [Monkey] -> Maybe [Monkey]
+runRounds 0 monkeys = Just monkeys
+runRounds round monkeys = do
+  roundResult <- runRound monkeys
+  runRounds (round - 1) roundResult
 
 -- Compute the final score
 computeScoreFromRounds :: [Monkey] -> Int
@@ -166,8 +168,11 @@ main = do
   -- part 1
   let rawMonkeyStrings = splitOn ("\n\n") contents
   let monkeys = map parseMonkey rawMonkeyStrings
-  let answer_part_1 = computeScoreFromRounds $ runRounds 20 monkeys
-  print answer_part_1
+  let updated_monkeys = runRounds 10000 monkeys
+  
+  case updated_monkeys of
+    Just updated_monkeys -> putStrLn $ show (computeScoreFromRounds updated_monkeys)
+    Nothing -> putStrLn "Something went wrong..."
 
   -- part 2
   -- remove "divide by 3", instead modulo the worry level based on the LCM of the "divisible by" values
