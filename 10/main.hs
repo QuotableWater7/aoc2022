@@ -20,12 +20,12 @@ convertToPixel ops pixel_index =
     pixel_x_pos = (pixel_index - 1) `mod` 40
     position_difference = abs (register_value - pixel_x_pos)
 
-stringToOp :: String -> Op
-stringToOp [] = Noop
+stringToOp :: String -> Either String Op
+stringToOp "" = Left "Cannot parse empty string to op"
 stringToOp str
-  | "noop" `elem` (words str) = Noop
-  | "addx" `elem` (words str) = Addx ((read . last . words) str)
-  | otherwise = error ("error: " ++ str)
+  | "noop" `elem` (words str) = Right Noop
+  | "addx" `elem` (words str) = Right $ Addx ((read . last . words) str)
+  | otherwise = Left $ "Unable to parse string to op: " ++ str
 
 chunk :: Int -> [a] -> [[a]]
 chunk n [] = []
@@ -39,16 +39,22 @@ main = do
 
   -- part 1
   let all_lines = lines contents
-  let ops = map stringToOp all_lines
-  let cycles_to_report = [20 + x * 40 | x <- [0..5]]
-  let results = map (\cycle -> cycle * computeRegisterValue ops cycle) cycles_to_report
-  print (sum results)
+  let ops = sequence $ map stringToOp all_lines
+  case ops of
+    Left error -> print $ "Failed to parse ops: " ++ error
+    Right ops -> do
+      -- part 1
+      let cycles_to_report = [20 + x * 40 | x <- [0..5]]
+      let results = map (\cycle -> cycle * computeRegisterValue ops cycle) cycles_to_report
+      print (sum results)
 
-  -- part 2
-  let pixel_indices = [1..240]
-  let pixels = map (convertToPixel ops) pixel_indices
-  let pixelLines = chunk 40 pixels
-  mapM print pixelLines
+      -- part 2
+      let pixel_indices = [1..240]
+      let pixels = map (convertToPixel ops) pixel_indices
+      let pixelLines = chunk 40 pixels
+      mapM print pixelLines
+
+      return ()
 
   -- cleanup
   hClose handle
