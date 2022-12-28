@@ -1,30 +1,30 @@
 import System.IO
 
-computeSingleScore :: (String, String) -> Int
+computeSingleScore :: (String, String) -> Either String Int
 computeSingleScore (x,y)
-  | x == "A" && y == "X" = 1 + 3
-  | x == "A" && y == "Y" = 2 + 6
-  | x == "A" && y == "Z" = 3 + 0
-  | x == "B" && y == "X" = 1 + 0
-  | x == "B" && y == "Y" = 2 + 3
-  | x == "B" && y == "Z" = 3 + 6
-  | x == "C" && y == "X" = 1 + 6
-  | x == "C" && y == "Y" = 2 + 0
-  | x == "C" && y == "Z" = 3 + 3
-  | otherwise = error "invalid input"
+  | x == "A" && y == "X" = Right $ 1 + 3
+  | x == "A" && y == "Y" = Right $ 2 + 6
+  | x == "A" && y == "Z" = Right $ 3 + 0
+  | x == "B" && y == "X" = Right $ 1 + 0
+  | x == "B" && y == "Y" = Right $ 2 + 3
+  | x == "B" && y == "Z" = Right $ 3 + 6
+  | x == "C" && y == "X" = Right $ 1 + 6
+  | x == "C" && y == "Y" = Right $ 2 + 0
+  | x == "C" && y == "Z" = Right $ 3 + 3
+  | otherwise = Left $ "Invalid combo: (" ++ x ++ ", " ++ y ++ ")"
 
-computeSingleScorePart2 :: (String, String) -> Int
+computeSingleScorePart2 :: (String, String) -> Either String Int
 computeSingleScorePart2 (x,y)
-  | x == "A" && y == "X" = 3 + 0
-  | x == "A" && y == "Y" = 1 + 3
-  | x == "A" && y == "Z" = 2 + 6
-  | x == "B" && y == "X" = 1 + 0
-  | x == "B" && y == "Y" = 2 + 3
-  | x == "B" && y == "Z" = 3 + 6
-  | x == "C" && y == "X" = 2 + 0
-  | x == "C" && y == "Y" = 3 + 3
-  | x == "C" && y == "Z" = 1 + 6
-  | otherwise = error "invalid input"
+  | x == "A" && y == "X" = Right $ 3 + 0
+  | x == "A" && y == "Y" = Right $ 1 + 3
+  | x == "A" && y == "Z" = Right $ 2 + 6
+  | x == "B" && y == "X" = Right $ 1 + 0
+  | x == "B" && y == "Y" = Right $ 2 + 3
+  | x == "B" && y == "Z" = Right $ 3 + 6
+  | x == "C" && y == "X" = Right $ 2 + 0
+  | x == "C" && y == "Y" = Right $ 3 + 3
+  | x == "C" && y == "Z" = Right $ 1 + 6
+  | otherwise = Left $ "Invalid combo: (" ++ x ++ ", " ++ y ++ ")"
 
 parseChoices :: String -> (String, String)
 parseChoices str = helper (words str)
@@ -40,11 +40,16 @@ main = do
   let list = lines contents
   let selections = map parseChoices list
 
-  let answerPart1 = sum . map computeSingleScore $ selections
-  print answerPart1
+  let answerPart1 = sequence . (map computeSingleScore) $ selections
+  case answerPart1 of
+    Left error -> print $ "Error: " ++ error
+    Right answerPart1 -> print $ show (sum answerPart1)
+
 
   -- part 2
-  let answerPart2 = sum . map computeSingleScorePart2 $ selections
-  print answerPart2
+  let answerPart2 = sequence . (map computeSingleScorePart2) $ selections
+  case answerPart2 of
+    Left error -> print $ "Error: " ++ error
+    Right answerPart2 -> print $ show (sum answerPart2)
 
   hClose handle
