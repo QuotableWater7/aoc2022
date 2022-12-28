@@ -117,9 +117,7 @@ updateMonkeyAtIndex i updateMonkeyFn monkeys = do
 
 -- find monkey with the given index
 getMonkeyAtIndex :: Int -> [Monkey] -> Maybe Monkey
-getMonkeyAtIndex i monkeys = do
-  monkey <- find (\m -> index m == i) monkeys
-  return monkey
+getMonkeyAtIndex i monkeys = find (\m -> index m == i) monkeys
 
 -- MAIN HELPERS
 
@@ -129,7 +127,7 @@ runRound monkeys = runRoundHelper 0 monkeys
   where
     runRoundHelper monkey_index monkeys
       -- Base case: the round is over when the monkey index matches the number of monkeys
-      | monkey_index == (length monkeys)                    = Just monkeys                  
+      | monkey_index == (length monkeys)                    = return monkeys                  
       | otherwise                                           = do
         (source_monkey, other_monkeys) <- removeMonkeyWithIndex monkey_index monkeys
 
@@ -168,7 +166,7 @@ main = do
   -- part 1
   let rawMonkeyStrings = splitOn ("\n\n") contents
   let monkeys = map parseMonkey rawMonkeyStrings
-  let updated_monkeys = runRounds 10000 monkeys
+  let updated_monkeys = runRounds 20 monkeys
   
   case updated_monkeys of
     Just updated_monkeys -> putStrLn $ show (computeScoreFromRounds updated_monkeys)

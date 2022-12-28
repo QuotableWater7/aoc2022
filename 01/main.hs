@@ -7,9 +7,8 @@ splitIntoGroups [] = []
 splitIntoGroups list = splitIntoGroupsHelper [] list
   where 
     splitIntoGroupsHelper current [] = [current]
-    splitIntoGroupsHelper current (x:xs)
-      | null x = [current] ++ (splitIntoGroups xs)
-      | otherwise = splitIntoGroupsHelper ((read x):current) xs
+    splitIntoGroupsHelper current ("":xs) = [current] ++ (splitIntoGroups xs)
+    splitIntoGroupsHelper current (x:xs) = splitIntoGroupsHelper ((read x):current) xs
 
 main = do  
   -- read file contents
