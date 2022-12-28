@@ -15,15 +15,20 @@ firstMutual ((x:xs):ys)
   | otherwise = firstMutual (xs:ys)
 firstMutual _ = Nothing
 
-splitRucksack :: String -> [String]
-splitRucksack list = [take sacklength list, drop sacklength list]
+splitRucksack :: String -> Either String [String]
+splitRucksack list = if remainder == 0
+  then Right [take sacklength list, drop sacklength list]
+  else Left "Rucksack length should be divisible by 2"
   where
     sacklength = (length list) `div` 2
+    remainder = (length list) `mod` 2
 
-splitRucksackPart2 :: [String] -> [[String]]
-splitRucksackPart2 [] = []
-splitRucksackPart2 (x:y:z:xs) = [[x, y, z]] ++ (splitRucksackPart2 xs)
-splitRucksackPart2 _ = []
+splitRucksackPart2 :: [String] -> Either String [[String]]
+splitRucksackPart2 [] = Right []
+splitRucksackPart2 (x:y:z:xs) = do
+  rest_of_solution <- splitRucksackPart2 xs
+  Right $ [[x, y, z]] ++ rest_of_solution
+splitRucksackPart2 _ = Left "Number of lines should be divisible by 3"
 
 main = do  
   -- read file contents
@@ -32,18 +37,24 @@ main = do
 
   -- part 1
   let rucksacks = lines contents
-  let splitRucksacks = map splitRucksack rucksacks
-  let firstMutuals = map firstMutual splitRucksacks
-  let priorities = fmap getPriority firstMutuals
-  let answer = fmap sum $ sequence priorities
-  print answer
+  let splitRucksacks = sequence $ map splitRucksack rucksacks
+  case splitRucksacks of
+    Left error -> print $ "Error: " ++ error
+    Right splitRucksacks -> do
+      let firstMutuals = map firstMutual splitRucksacks
+      let priorities = fmap getPriority firstMutuals
+      let answer = fmap sum $ sequence priorities
+      print answer
 
   -- part 2
   let rucksacksInThirds = splitRucksackPart2 rucksacks
-  let firstMutualsPart2 = map firstMutual rucksacksInThirds
-  let prioritiesPart2 = fmap getPriority firstMutualsPart2
-  let answerPart2 = fmap sum $ sequence prioritiesPart2
-  print answerPart2
+  case rucksacksInThirds of
+    Left error -> print $ "Error: " ++ error
+    Right rucksacksInThirds -> do
+      let firstMutualsPart2 = map firstMutual rucksacksInThirds
+      let prioritiesPart2 = fmap getPriority firstMutualsPart2
+      let answerPart2 = fmap sum $ sequence prioritiesPart2
+      print answerPart2
 
   -- tie up loose ends
   hClose handle
