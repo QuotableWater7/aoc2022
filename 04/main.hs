@@ -25,11 +25,15 @@ validateInt coord = if length results > 0
 getScheduleFromString :: String -> Either String Schedule
 getScheduleFromString "" = Left "Cannot make schedule from empty string"
 getScheduleFromString str = do
-  validated_x <- validateInt x
-  validated_y <- validateInt y
-  Right Schedule { start=validated_x, end=validated_y }
+  if length coords == 2 
+    then do
+      validated_x <- validateInt (head coords)
+      validated_y <- validateInt (last coords)
+      Right Schedule { start=validated_x, end=validated_y }
+    else
+      Left $ "Invalid schedule string provided: " ++ str
   where
-    [x,y] = splitOn "-" str
+    coords = splitOn "-" str
 
 validateSchedule :: String -> Either String Schedule
 validateSchedule str = do
