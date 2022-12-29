@@ -102,32 +102,34 @@ getMonkeyIndexToThrowTo monkey worry_level = do
     False -> testFalse monkey
 
 -- Given an index and a list of monkeys, return tuple with the found monkey and the remaining monkeys
-removeMonkeyWithIndex :: Int -> [Monkey] -> Maybe (Monkey, [Monkey])
+removeMonkeyWithIndex :: Int -> [Monkey] -> Either String (Monkey, [Monkey])
 removeMonkeyWithIndex i monkeys = do
   monkey_with_index_i <- getMonkeyAtIndex i monkeys
   let rest_of_monkeys = filter (not . (== i) . index) monkeys
 
-  return (monkey_with_index_i, rest_of_monkeys)
+  Right (monkey_with_index_i, rest_of_monkeys)
 
-updateMonkeyAtIndex :: Int -> (Monkey -> Monkey) -> [Monkey] -> Maybe [Monkey]
+updateMonkeyAtIndex :: Int -> (Monkey -> Monkey) -> [Monkey] -> Either String [Monkey]
 updateMonkeyAtIndex i updateMonkeyFn monkeys = do
   (monkey_to_update, other_monkeys) <- removeMonkeyWithIndex i monkeys
   let updated_monkey = updateMonkeyFn monkey_to_update
-  return $ [updated_monkey] ++ other_monkeys
+  Right $ [updated_monkey] ++ other_monkeys
 
 -- find monkey with the given index
-getMonkeyAtIndex :: Int -> [Monkey] -> Maybe Monkey
-getMonkeyAtIndex i monkeys = find (\m -> index m == i) monkeys
+getMonkeyAtIndex :: Int -> [Monkey] -> Either String Monkey
+getMonkeyAtIndex i monkeys = case find (\m -> index m == i) monkeys of
+  Nothing -> Left $ "Couldn't find monkey at index: " ++ (show i)
+  Just m -> Right m
 
 -- MAIN HELPERS
 
 -- Run a single round across all monkeys
-runRound :: [Monkey] -> Maybe [Monkey]
+runRound :: [Monkey] -> Either String [Monkey]
 runRound monkeys = runRoundHelper 0 monkeys
   where
     runRoundHelper monkey_index monkeys
       -- Base case: the round is over when the monkey index matches the number of monkeys
-      | monkey_index == (length monkeys)                    = return monkeys                  
+      | monkey_index == (length monkeys)                    = Right monkeys                  
       | otherwise                                           = do
         (source_monkey, other_monkeys) <- removeMonkeyWithIndex monkey_index monkeys
 
@@ -144,8 +146,8 @@ runRound monkeys = runRoundHelper 0 monkeys
             runRoundHelper monkey_index new_monkey_list
 
 -- Run arbitrary number of rounds of monkey turns
-runRounds :: Int -> [Monkey] -> Maybe [Monkey]
-runRounds 0 monkeys = Just monkeys
+runRounds :: Int -> [Monkey] -> Either String [Monkey]
+runRounds 0 monkeys = Right monkeys
 runRounds round monkeys = do
   roundResult <- runRound monkeys
   runRounds (round - 1) roundResult
@@ -169,8 +171,8 @@ main = do
   let updated_monkeys = runRounds 20 monkeys
   
   case updated_monkeys of
-    Just updated_monkeys -> putStrLn $ show (computeScoreFromRounds updated_monkeys)
-    Nothing -> putStrLn "Something went wrong..."
+    Right updated_monkeys -> putStrLn $ show (computeScoreFromRounds updated_monkeys)
+    Left error -> putStrLn $ "Something went wrong: " ++ error
 
   -- part 2
   -- remove "divide by 3", instead modulo the worry level based on the LCM of the "divisible by" values
