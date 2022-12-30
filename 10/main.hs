@@ -23,13 +23,13 @@ convertToPixel ops pixel_index =
 stringToOp :: String -> Either String Op
 stringToOp "" = Left "Cannot parse empty string to op"
 stringToOp str
-  | "noop" `elem` (words str) = Right Noop
-  | "addx" `elem` (words str) = Right $ Addx ((read . last . words) str)
+  | "noop" `elem` words str = Right Noop
+  | "addx" `elem` words str = Right $ Addx ((read . last . words) str)
   | otherwise = Left $ "Unable to parse string to op: " ++ str
 
 chunk :: Int -> [a] -> [[a]]
 chunk n [] = []
-chunk n list = [n_elements] ++ chunk n rest
+chunk n list = n_elements : chunk n rest
   where
     (n_elements, rest) = splitAt n list
 
@@ -39,7 +39,8 @@ main = do
 
   -- part 1
   let all_lines = lines contents
-  let ops = sequence $ map stringToOp all_lines
+  let ops = mapM stringToOp all_lines
+
   case ops of
     Left error -> print $ "Failed to parse ops: " ++ error
     Right ops -> do
@@ -52,9 +53,7 @@ main = do
       let pixel_indices = [1..240]
       let pixels = map (convertToPixel ops) pixel_indices
       let pixelLines = chunk 40 pixels
-      mapM print pixelLines
-
-      return ()
+      mapM_ print pixelLines
 
   -- cleanup
   hClose handle

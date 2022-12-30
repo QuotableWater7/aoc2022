@@ -7,7 +7,7 @@ computeIndex str num_uniq = computeIndexHelper 0 str num_uniq
   where
     computeIndexHelper n [] _ = n
     computeIndexHelper n list@(x:xs) num_uniq
-      | length (L.nub(first_n)) == num_uniq = n + num_uniq
+      | length (L.nub first_n) == num_uniq = n + num_uniq
       | otherwise = computeIndexHelper (n+1) xs num_uniq
       where first_n = take num_uniq list
 

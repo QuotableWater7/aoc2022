@@ -12,13 +12,16 @@ parseVariable var = if var == "old" then DynamicValue else HardcodedValue (read 
 
 hydrateVariable :: Variable -> Int -> Int
 hydrateVariable (HardcodedValue hv) _ = hv
-hydrateVariable (DynamicValue) value = value
+hydrateVariable DynamicValue value = value
 
 -- OpType
 data OpType = Add | Multiply deriving(Show)
 
 parseOpType :: String -> OpType
-parseOpType op = if op == "+" then Add else if op == "*" then Multiply else error "Invalid opType"
+parseOpType op
+  | op == "+"   = Add
+  | op == "*"   = Multiply
+  | otherwise   = error "Invalid opType"
 
 getOperator :: OpType -> (Int -> Int -> Int)
 getOperator Add = (+)
@@ -28,7 +31,7 @@ getOperator Multiply = (*)
 data Operation = Operation OpType Variable Variable
 
 instance Show Operation where
-  show (Operation opType var1 var2) = "Op: " ++ (show opType) ++ " (" ++ (show var1) ++ ", " ++ (show var2) ++ ")"
+  show (Operation opType var1 var2) = "Op: " ++ show opType ++ " (" ++ show var1 ++ ", " ++ show var2 ++ ")"
 
 makeOperation :: String -> String -> String -> Operation
 makeOperation op var1 var2 = Operation (parseOpType op) (parseVariable var1) (parseVariable var2)
@@ -52,12 +55,12 @@ data Monkey = Monkey {
 }
 
 instance Show Monkey where
-  show m = "Monkey: \n" ++ "\tIndex:\t" ++ show (index m) ++ "\n\tNum Updates:\t" ++ (show $ numberOfUpdates m) ++ "\n\tItems:\t" ++ show (items m) ++ "\n\t" ++ (show . operation $ m) ++ "\n\tTest True:\t" ++ show (testTrue m) ++ "\n\tTest False:\t" ++ show (testFalse m) ++ "\n"
+  show m = "Monkey: \n" ++ "\tIndex:\t" ++ show (index m) ++ "\n\tNum Updates:\t" ++ show (numberOfUpdates m) ++ "\n\tItems:\t" ++ show (items m) ++ "\n\t" ++ (show . operation $ m) ++ "\n\tTest True:\t" ++ show (testTrue m) ++ "\n\tTest False:\t" ++ show (testFalse m) ++ "\n"
 
 parseMonkey :: String -> Monkey
 parseMonkey str = Monkey { 
   index = (read . last . head) (str =~ "Monkey ([0-9]+):"::[[String]]), 
-  items = ((map read) . (splitOn ", ") . last . head) (str =~ "Starting items: (.*)"::[[String]]), 
+  items = (map read . splitOn ", " . last . head) (str =~ "Starting items: (.*)"::[[String]]), 
   numberOfUpdates = 0, 
   operation = makeOperation opType var1 var2, 
   test = (== 0) . (`mod` divisible_by), 
@@ -79,33 +82,33 @@ inspectFirstItem monkey = (worry_level, updatedMonkey)
     
     updatedMonkey = monkey { 
       items = (tail . items) monkey,
-      numberOfUpdates = (numberOfUpdates monkey) + 1
+      numberOfUpdates = numberOfUpdates monkey + 1
     }
 
 -- Adds an item to a monkey's item list
 pushItem :: Int -> Monkey -> Monkey
 pushItem item monkey = monkey { 
-  items = (items monkey) ++ [item] 
+  items = items monkey ++ [item] 
 }
 
 computeWorryLevel :: Monkey -> Int -> Int
 computeWorryLevel monkey item = result
   where
     worryLevelAfterInspection = solveOperation (operation monkey) item
-    result = floor ((fromIntegral worryLevelAfterInspection) / 3)
+    result = floor (fromIntegral worryLevelAfterInspection / 3)
 
 -- Determine index of monkey to throw to next
 getMonkeyIndexToThrowTo :: Monkey -> Int -> Int
 getMonkeyIndexToThrowTo monkey worry_level = do
-  case test monkey $ worry_level of
-    True -> testTrue monkey
-    False -> testFalse monkey
+  if test monkey worry_level 
+    then testTrue monkey
+    else testFalse monkey
 
 -- Given an index and a list of monkeys, return tuple with the found monkey and the remaining monkeys
 removeMonkeyWithIndex :: Int -> [Monkey] -> Either String (Monkey, [Monkey])
 removeMonkeyWithIndex i monkeys = do
   monkey_with_index_i <- getMonkeyAtIndex i monkeys
-  let rest_of_monkeys = filter (not . (== i) . index) monkeys
+  let rest_of_monkeys = filter ((/= i) . index) monkeys
 
   Right (monkey_with_index_i, rest_of_monkeys)
 
@@ -113,12 +116,12 @@ updateMonkeyAtIndex :: Int -> (Monkey -> Monkey) -> [Monkey] -> Either String [M
 updateMonkeyAtIndex i updateMonkeyFn monkeys = do
   (monkey_to_update, other_monkeys) <- removeMonkeyWithIndex i monkeys
   let updated_monkey = updateMonkeyFn monkey_to_update
-  Right $ [updated_monkey] ++ other_monkeys
+  Right $ updated_monkey : other_monkeys
 
 -- find monkey with the given index
 getMonkeyAtIndex :: Int -> [Monkey] -> Either String Monkey
 getMonkeyAtIndex i monkeys = case find (\m -> index m == i) monkeys of
-  Nothing -> Left $ "Couldn't find monkey at index: " ++ (show i)
+  Nothing -> Left $ "Couldn't find monkey at index: " ++ show i
   Just m -> Right m
 
 -- MAIN HELPERS
@@ -129,11 +132,11 @@ runRound monkeys = runRoundHelper 0 monkeys
   where
     runRoundHelper monkey_index monkeys
       -- Base case: the round is over when the monkey index matches the number of monkeys
-      | monkey_index == (length monkeys)                    = Right monkeys                  
-      | otherwise                                           = do
+      | monkey_index == length monkeys    = Right monkeys                  
+      | otherwise                         = do
         (source_monkey, other_monkeys) <- removeMonkeyWithIndex monkey_index monkeys
 
-        if (null (items source_monkey))
+        if null (items source_monkey)
           then runRoundHelper (monkey_index + 1) monkeys
           else do
             let (worry_level, updated_monkey) = inspectFirstItem source_monkey
@@ -157,7 +160,7 @@ computeScoreFromRounds :: [Monkey] -> Int
 computeScoreFromRounds monkeys = do
   let ordered_update_amounts = sortBy (flip compare) $ map numberOfUpdates monkeys
   let top_2_results = take 2 ordered_update_amounts
-  let score = foldr (*) 1 top_2_results
+  let score = product top_2_results
   score
 
 main = do
@@ -166,12 +169,12 @@ main = do
   contents <- hGetContents handle
 
   -- part 1
-  let rawMonkeyStrings = splitOn ("\n\n") contents
+  let rawMonkeyStrings = splitOn "\n\n" contents
   let monkeys = map parseMonkey rawMonkeyStrings
   let updated_monkeys = runRounds 20 monkeys
   
   case updated_monkeys of
-    Right updated_monkeys -> putStrLn $ show (computeScoreFromRounds updated_monkeys)
+    Right updated_monkeys -> print (computeScoreFromRounds updated_monkeys)
     Left error -> putStrLn $ "Something went wrong: " ++ error
 
   -- part 2
