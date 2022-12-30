@@ -3,11 +3,12 @@
 import System.IO
 import Data.List.Split
 import Text.Regex.TDFA
+import Text.Read (readEither)
 
 -- Stack
 -- The data structure is generic but most of the supporting functions
 -- for AoC depend specifically on Char/String behavior
-data Stack a = Stack [a] deriving(Show)
+newtype Stack a = Stack [a] deriving(Show)
 
 pushStack :: a -> Stack a -> Stack a
 pushStack x (Stack xs) = Stack (x:xs)
@@ -35,7 +36,7 @@ popStackAtIndex i stacks = (char, updatedStacks)
 pushStackAtIndex :: Int -> Char -> [Stack Char] -> [Stack Char]
 pushStackAtIndex 1 char ((Stack xs):stacks) = Stack (char:xs) : stacks
 pushStackAtIndex n char (s:stacks) = s : pushStackAtIndex (n - 1) char stacks
-pushStackAtIndex n ch stacks = error $ "Error: reached " ++ (show n) ++ [ch]
+pushStackAtIndex n ch stacks = error $ "Error: reached " ++ show n ++ [ch]
 
 -- Part 2 --
 
@@ -57,20 +58,26 @@ pushStackAtIndexV2 i chars stacks = do
 -- Apply an arbitrary update to a stack at a particular index.
 updateStackAtIndex :: Int -> (Stack a -> Stack a) -> [Stack a] -> [Stack a]
 updateStackAtIndex _ _ [] = []
-updateStackAtIndex 1 updateFn (s:stacks) = (updateFn s):stacks
-updateStackAtIndex index updateFn (s:stacks) = s:(updateStackAtIndex (index - 1) updateFn stacks)
+updateStackAtIndex 1 updateFn (s:stacks) = updateFn s : stacks
+updateStackAtIndex index updateFn (s:stacks) = s : updateStackAtIndex (index - 1) updateFn stacks
 
 -- Move: store details about how we will move blocks around
 data Move = Move { sourceIndex :: Int, destIndex :: Int, amount :: Int } deriving(Show)
 
-parseMove :: String -> Move
-parseMove str = Move {
-  amount = read . last $ amount,
-  sourceIndex = read . last $ sourceIndex,
-  destIndex = read . last $ destIndex
-}
-  where
-   [amount, sourceIndex, destIndex]= (str =~ "([0-9]+)"::[[String]])
+parseMove :: String -> Either String Move
+parseMove str = do
+  let parseResults = str =~ "([0-9]+)"::[[String]]
+
+  if length parseResults /= 3
+    then Left $ "Invalid move: " ++ str
+    else do
+      let [amount, sourceIndex, destIndex] = parseResults
+
+      Right Move {
+        amount = read . last $ amount,
+        sourceIndex = read . last $ sourceIndex,
+        destIndex = read . last $ destIndex
+      }
 
 -- Helpers
 countNumbersFromNumberLine :: String -> Int
@@ -79,11 +86,10 @@ countNumbersFromNumberLine str = length (str =~ "([0-9]+)"::[[String]])
 processLine :: String -> [Stack Char] -> [Stack Char]
 processLine [] stacks = stacks
 processLine (_:' ':_:_:string) (s:stacks) = s : processLine string stacks
-processLine (_:char:_:_:string) (s:stacks) = (pushStack char s) : processLine string stacks
+processLine (_:char:_:_:string) (s:stacks) = pushStack char s : processLine string stacks
 
 readLinesIntoStacks :: [String] -> [Stack Char] -> [Stack Char]
-readLinesIntoStacks [] stacks = stacks
-readLinesIntoStacks (line:lines) stacks = readLinesIntoStacks lines $ processLine line stacks
+readLinesIntoStacks lines stacks = foldl (flip processLine) stacks lines
 
 initializeStacks :: String -> [Stack Char]
 initializeStacks str = do
@@ -94,10 +100,10 @@ initializeStacks str = do
   readLinesIntoStacks blockLists emptyStacks
 
 -- Parse a string containing all the moves into a Move list
-initializeMoves :: String -> [Move]
+initializeMoves :: String -> Either String [Move]
 initializeMoves str = do
   let lines = splitOn "\n" str
-  map parseMove lines
+  mapM parseMove lines
 
 -- For every move, we pop a stack at one index and then push onto a stack.
 -- If "amount" is greater than 1, we recursively call applyMoveV1 and decrement
@@ -138,7 +144,7 @@ getHeadOfStacks :: [Stack Char] -> String
 getHeadOfStacks [] = []
 getHeadOfStacks (x:xs) = do
   let (char, updatedStack) = popStack x
-  char : (getHeadOfStacks xs)
+  char : getHeadOfStacks xs
 
 main = do
   -- read input
@@ -149,14 +155,18 @@ main = do
   let [gameStateStr, movesStr] = splitOn "\n\n" contents
 
   let moves = initializeMoves movesStr
-  let stacks = initializeStacks gameStateStr
 
-  let updatedStacksPart1 = applyMoves moves applyMoveV1 stacks
-  print $ getHeadOfStacks updatedStacksPart1
+  case moves of
+    Left error -> print $ "Failed to generate moves: " ++ error
+    Right moves -> do
+      let stacks = initializeStacks gameStateStr
 
-  -- part 2
-  let updatedStacksPart2 = applyMoves moves applyMoveV2 stacks
-  print $ getHeadOfStacks updatedStacksPart2
+      let updatedStacksPart1 = applyMoves moves applyMoveV1 stacks
+      print $ getHeadOfStacks updatedStacksPart1
+
+      -- part 2
+      let updatedStacksPart2 = applyMoves moves applyMoveV2 stacks
+      print $ getHeadOfStacks updatedStacksPart2
 
   -- tidy up
   hClose handle
