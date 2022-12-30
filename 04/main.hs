@@ -6,17 +6,17 @@ data Schedule = Schedule { start::Int, end::Int } deriving(Show)
 
 isFullyOverlapping :: Schedule -> Schedule -> Bool
 isFullyOverlapping s1 s2 =
-  (start(s1) <= start(s2) && end(s1) >= end(s2)) || 
-  (start(s2) <= start(s1) && end(s2) >= end(s1))
+  (start s1 <= start s2 && end s1  >= end s2) || 
+  (start s2 <= start s1 && end s2 >= end s1)
 
 isPartiallyOverlapping :: Schedule -> Schedule -> Bool
 isPartiallyOverlapping s1 s2 = 
-  (start(s1) <= start(s2) && end(s1) >= start(s2)) ||
-  (start(s2) < start(s1) && end(s2) >= start(s1))
+  (start s1 <= start s2 && end s1 >= start s2) ||
+  (start s2 < start s1 && end s2 >= start s1)
 
 validateInt :: String -> Either String Int
 validateInt "" = Left "Int must be non-empty"
-validateInt coord = if length results > 0
+validateInt coord = if (not . null) results
   then Right $ read ((head . head) results)
   else Left $ "Invalid int: " ++ coord
   where
@@ -43,7 +43,7 @@ validateSchedule str = do
       validated_start <- validateInt (head coords)
       validated_end <- validateInt (last coords)
       Right $ Schedule { start=validated_start, end=validated_end }
-    else Left $ "Need 2 coordinates to be provided: " ++ (head coords)
+    else Left $ "Need 2 coordinates to be provided: " ++ head coords
 
 convertLineToSchedules :: String -> Either String (Schedule, Schedule)
 convertLineToSchedules "" = Left "Cannot convert empty line to a pair of schedules"
@@ -64,18 +64,18 @@ main = do
 
   -- part 1
   let all_lines = lines contents
-  let all_schedules = sequence $ map convertLineToSchedules all_lines
+  let all_schedules = mapM convertLineToSchedules all_lines
   case all_schedules of
     Left error -> print $ "Error Part 1: " ++ error
     Right all_schedules -> do
-      let answerPart1 = length . filter (\(x, y) -> isFullyOverlapping x y) $ all_schedules
+      let answerPart1 = length . filter (uncurry isFullyOverlapping) $ all_schedules
       print answerPart1
 
   -- part 2
   case all_schedules of
     Left error -> print $ "Error Part 2: " ++ error
     Right all_schedules -> do
-      let answerPart2 = length . filter (\(x, y) -> isPartiallyOverlapping x y) $ all_schedules
+      let answerPart2 = length . filter (uncurry isPartiallyOverlapping) $ all_schedules
       print answerPart2
 
   -- tie up loose ends

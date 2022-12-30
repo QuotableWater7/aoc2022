@@ -40,14 +40,14 @@ main = do
   let list = lines contents
   let selections = map parseChoices list
 
-  let answerPart1 = sequence . (map computeSingleScore) $ selections
+  let answerPart1 = mapM computeSingleScore selections
   case answerPart1 of
     Left error -> print $ "Error: " ++ error
     Right answerPart1 -> print $ show (sum answerPart1)
 
 
   -- part 2
-  let answerPart2 = sequence . (map computeSingleScorePart2) $ selections
+  let answerPart2 = mapM computeSingleScorePart2 selections
   case answerPart2 of
     Left error -> print $ "Error: " ++ error
     Right answerPart2 -> print $ show (sum answerPart2)
