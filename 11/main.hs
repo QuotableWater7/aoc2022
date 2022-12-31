@@ -3,12 +3,16 @@ import Text.Regex.TDFA
 import Data.List
 import Data.List.Split
 import Data.Function
+import GHC.Base (error)
 
 -- Variable
 data Variable = DynamicValue | HardcodedValue Int deriving(Show)
 
-parseVariable :: String -> Variable
-parseVariable var = if var == "old" then DynamicValue else HardcodedValue (read var)
+parseVariable :: String -> Either String Variable
+parseVariable var
+  | var == "old"                      = Right DynamicValue
+  | var /= "old" && (not . null) var  = Right $ HardcodedValue (read var)
+  | otherwise                         = Left $ "Failure to parse var: " ++ var
 
 hydrateVariable :: Variable -> Int -> Int
 hydrateVariable (HardcodedValue hv) _ = hv
@@ -17,11 +21,11 @@ hydrateVariable DynamicValue value = value
 -- OpType
 data OpType = Add | Multiply deriving(Show)
 
-parseOpType :: String -> OpType
+parseOpType :: String -> Either String OpType
 parseOpType op
-  | op == "+"   = Add
-  | op == "*"   = Multiply
-  | otherwise   = error "Invalid opType"
+  | op == "+"   = Right Add
+  | op == "*"   = Right Multiply
+  | otherwise   = Left $ "Invalid opType: " ++ op
 
 getOperator :: OpType -> (Int -> Int -> Int)
 getOperator Add = (+)
@@ -33,8 +37,13 @@ data Operation = Operation OpType Variable Variable
 instance Show Operation where
   show (Operation opType var1 var2) = "Op: " ++ show opType ++ " (" ++ show var1 ++ ", " ++ show var2 ++ ")"
 
-makeOperation :: String -> String -> String -> Operation
-makeOperation op var1 var2 = Operation (parseOpType op) (parseVariable var1) (parseVariable var2)
+makeOperation :: String -> String -> String -> Either String Operation
+makeOperation op var1 var2 = do
+  opType <- parseOpType op
+  validatedVar1 <- parseVariable var1
+  validatedVar2 <- parseVariable var2
+
+  Right $ Operation opType validatedVar1 validatedVar2
 
 solveOperation :: Operation -> Int -> Int
 solveOperation (Operation op var1 var2) value = opFunc hydratedVar1 hydratedVar2
@@ -57,21 +66,24 @@ data Monkey = Monkey {
 instance Show Monkey where
   show m = "Monkey: \n" ++ "\tIndex:\t" ++ show (index m) ++ "\n\tNum Updates:\t" ++ show (numberOfUpdates m) ++ "\n\tItems:\t" ++ show (items m) ++ "\n\t" ++ (show . operation $ m) ++ "\n\tTest True:\t" ++ show (testTrue m) ++ "\n\tTest False:\t" ++ show (testFalse m) ++ "\n"
 
-parseMonkey :: String -> Monkey
-parseMonkey str = Monkey { 
-  index = (read . last . head) (str =~ "Monkey ([0-9]+):"::[[String]]), 
-  items = (map read . splitOn ", " . last . head) (str =~ "Starting items: (.*)"::[[String]]), 
-  numberOfUpdates = 0, 
-  operation = makeOperation opType var1 var2, 
-  test = (== 0) . (`mod` divisible_by), 
-  testTrue = (read . last . head) (str =~ "If true: throw to monkey ([0-9]+)"::[[String]]), 
-  testFalse = (read . last . head) (str =~ "If false: throw to monkey ([0-9]+)"::[[String]]) 
-}
-  where
-    opType = (last . head) (str =~ "Operation:.*([+*]).*"::[[String]])
-    var1 = (last . head) (str =~ "Operation:.* = ([a-z0-9]+) [+*].*"::[[String]])
-    var2 = (last . head) (str =~ "Operation:.*[+*] ([a-z0-9]+).*"::[[String]])
-    divisible_by = (read . last . head) (str =~ "Test: divisible by ([0-9]+)"::[[String]])
+parseMonkey :: String -> Either String Monkey
+parseMonkey str = do
+  operation <- makeOperation opType var1 var2
+  
+  return Monkey { 
+    index = (read . last . head) (str =~ "Monkey ([0-9]+):"::[[String]]), 
+    items = (map read . splitOn ", " . last . head) (str =~ "Starting items: (.*)" :: [[String]]), 
+    numberOfUpdates = 0, 
+    operation = operation, 
+    test = (== 0) . (`mod` divisible_by), 
+    testTrue = (read . last . head) (str =~ "If true: throw to monkey ([0-9]+)" :: [[String]]), 
+    testFalse = (read . last . head) (str =~ "If false: throw to monkey ([0-9]+)" :: [[String]]) 
+  }
+    where
+      opType = (last . head) (str =~ "Operation:.*([+*]).*" :: [[String]])
+      var1 = (last . head) (str =~ "Operation:.* = ([a-z0-9]+) [+*].*" :: [[String]])
+      var2 = (last . head) (str =~ "Operation:.*[+*] ([a-z0-9]+).*" :: [[String]])
+      divisible_by = (read . last . head) (str =~ "Test: divisible by ([0-9]+)" :: [[String]])
 
 -- Inspect the first item, which in turn increments the number of updates to the monkey
 inspectFirstItem :: Monkey -> (Int, Monkey)
@@ -170,12 +182,15 @@ main = do
 
   -- part 1
   let rawMonkeyStrings = splitOn "\n\n" contents
-  let monkeys = map parseMonkey rawMonkeyStrings
-  let updated_monkeys = runRounds 20 monkeys
+  let monkeys = mapM parseMonkey rawMonkeyStrings
+  case monkeys of
+    Left error -> print $ "Error: " ++ error
+    Right monkeys -> do
+      let updated_monkeys = runRounds 20 monkeys
   
-  case updated_monkeys of
-    Right updated_monkeys -> print (computeScoreFromRounds updated_monkeys)
-    Left error -> putStrLn $ "Something went wrong: " ++ error
+      case updated_monkeys of
+        Right updated_monkeys -> print (computeScoreFromRounds updated_monkeys)
+        Left error -> putStrLn $ "Something went wrong: " ++ error
 
   -- part 2
   -- remove "divide by 3", instead modulo the worry level based on the LCM of the "divisible by" values
