@@ -1,27 +1,29 @@
-use std::fs;
+use std::{fs};
+
+fn get_input_filepath() -> String {
+  let split_file = file!();
+  let index_of_last_slash = split_file.rfind(|x| x == '/').unwrap();
+  let (directory, _filename) = split_file.split_at(index_of_last_slash);
+
+  format!("{directory}/input.txt")
+}
 
 fn part1() {
-    let contents = fs::read_to_string("/Users/josephbowler/agora/aoc2022/01/input.txt")
-        .expect("Should have been able to read the file");
-        
-    let groups = contents.split("\n\n");
-    let mut max: u32 = 0;
+  let input_filepath = get_input_filepath();
+  let contents = fs::read_to_string(input_filepath)
+      .expect("Should have been able to read the file");
+      
+  let groups = contents.split("\n\n");
 
-    for group in groups {
-      let values = group.lines();
+  let max: u32 = groups.map(|g| g.lines()
+      .map( |line| line.parse::<u32>().unwrap() ).sum()
+    ).max().unwrap();
 
-      let total: u32 = values.map(|x| x.parse::<u32>().expect("should be a number")).sum();
-
-      if total.gt(&max) {
-        max = total
-      }
-    }
-
-    println!("Max:\t{max}");
+  println!("Part 1: {max}");
 }
 
 fn part2() {
-  let contents = fs::read_to_string("/Users/josephbowler/agora/aoc2022/01/input.txt")
+  let contents = fs::read_to_string(get_input_filepath())
     .expect("Should have been able to read the file");
 
   let groups = contents.split("\n\n").collect::<Vec<&str>>();
@@ -40,13 +42,10 @@ fn part2() {
   let top_3: Vec<u32> = totals.into_iter().rev().take(3).collect();
   let sum: u32 = top_3.into_iter().sum();
 
-  println!("{sum}")
+  println!("Part 2: {sum}")
 }
 
 fn main() {
   part1();
-
-  println!("********************");
-
   part2();
 }
