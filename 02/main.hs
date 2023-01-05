@@ -18,16 +18,28 @@ parseTurn [first_move_str, ' ', second_move_str] = do
   Right (first_turn_action, second_turn_action)
 parseTurn t = Left $ "Error parsing turn: " ++ t
 
+data TurnResult = Won | Lost | Tie deriving(Show)
+
+getTurnResultFor2ndPlayer :: (TurnAction, TurnAction) -> TurnResult
+getTurnResultFor2ndPlayer (Rock, Rock) = Tie
+getTurnResultFor2ndPlayer (Rock, Paper) = Won
+getTurnResultFor2ndPlayer (Rock, Scissors) = Lost
+getTurnResultFor2ndPlayer (Paper, Rock) = Lost
+getTurnResultFor2ndPlayer (Paper, Paper) = Tie
+getTurnResultFor2ndPlayer (Paper, Scissors) = Won
+getTurnResultFor2ndPlayer (Scissors, Rock) = Won
+getTurnResultFor2ndPlayer (Scissors, Paper) = Lost
+getTurnResultFor2ndPlayer (Scissors, Scissors) = Tie
+
 computeSingleScorePart1 :: (TurnAction, TurnAction) -> Int
-computeSingleScorePart1 (Rock, Rock) = 1 + 3
-computeSingleScorePart1 (Rock, Paper) = 2 + 6
-computeSingleScorePart1 (Rock, Scissors) = 3 + 0
-computeSingleScorePart1 (Paper, Rock) = 1 + 0
-computeSingleScorePart1 (Paper, Paper) = 2 + 3
-computeSingleScorePart1 (Paper, Scissors) = 3 + 6
-computeSingleScorePart1 (Scissors, Rock) = 1 + 6
-computeSingleScorePart1 (Scissors, Paper) = 2 + 0
-computeSingleScorePart1 (Scissors, Scissors) = 3 + 3
+computeSingleScorePart1 tuple = scoreHelper tuple + case getTurnResultFor2ndPlayer tuple of
+  Won -> 6
+  Lost -> 0
+  Tie -> 3
+  where 
+    scoreHelper (_, Rock) = 1
+    scoreHelper (_, Paper) = 2
+    scoreHelper (_, Scissors) = 3
 
 computeSingleScorePart2 :: (TurnAction, TurnAction) -> Int
 computeSingleScorePart2 (Rock, Rock) = 3 + 0
