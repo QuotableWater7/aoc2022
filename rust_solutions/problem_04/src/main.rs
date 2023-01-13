@@ -33,24 +33,18 @@ fn main() {
   let timespans = include_str!("input.txt").lines().map(parse_line);
 
   // part 1
-  let mut count = 0;
-  
-  for (timespan1, timespan2) in timespans.clone() {
-    if is_fully_overlapping(&timespan1, &timespan2) {
-      count = count + 1;
-    }
-  }
+  let count = timespans
+    .clone()
+    .filter(|(span1, span2)| is_fully_overlapping(&span1, &span2))
+    .count();
 
   println!("part 1: {count}");
 
   // part 2
-  let mut count = 0;
-
-  for (timespan1, timespan2) in timespans.clone() {
-    if is_partially_overlapping(&timespan1, &timespan2) {
-      count = count + 1;
-    }
-  }
+  let count = timespans
+    .clone()
+    .filter(|(span1, span2)| is_partially_overlapping(&span1, &span2))
+    .count();
 
   println!("part 2: {count}");
 }
