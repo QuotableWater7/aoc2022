@@ -6,7 +6,7 @@ data Schedule = Schedule { start::Int, end::Int } deriving(Show)
 
 isFullyOverlapping :: Schedule -> Schedule -> Bool
 isFullyOverlapping s1 s2 =
-  (start s1 <= start s2 && end s1  >= end s2) || 
+  (start s1 <= start s2 && end s1 >= end s2) || 
   (start s2 <= start s1 && end s2 >= end s1)
 
 isPartiallyOverlapping :: Schedule -> Schedule -> Bool
