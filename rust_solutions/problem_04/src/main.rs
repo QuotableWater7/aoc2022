@@ -1,41 +1,54 @@
+use std::str::FromStr;
+
 #[derive(Debug)]
 struct Timespan {
   start: u64,
   end: u64,
 }
 
-fn is_fully_overlapping(timespan1: &Timespan, timespan2: &Timespan) -> bool {
-  (timespan1.start <= timespan2.start && timespan1.end <= timespan2.end) || 
-  timespan2.start >= timespan1.start && timespan2.end <= timespan1.end
-}
-
-fn is_partially_overlapping(timespan1: &Timespan, timespan2: &Timespan) -> bool {
-  if timespan1.start <= timespan2.start {
-    return timespan1.end >= timespan2.start
+impl Timespan {
+  pub fn is_fully_overlapping(&self, timespan: &Timespan) -> bool {
+    (self.start <= timespan.start && self.end <= timespan.end) || 
+    timespan.start >= self.start && timespan.end <= self.end
   }
 
-  if timespan2.start <= timespan1.start {
-    return timespan2.end >= timespan1.start
+  pub fn is_partially_overlapping(&self, timespan: &Timespan) -> bool {
+    (self.start <= timespan.start && self.end >= timespan.start) ||
+    timespan.start <= self.start && timespan.end >= self.start
   }
-
-  false
 }
 
-fn parse_line(string: &str) -> (Timespan, Timespan) {
+#[derive(Debug)]
+struct ParseTimespanError;
+
+impl FromStr for Timespan {
+  type Err = ParseTimespanError;
+
+  fn from_str(string: &str) -> Result<Self, Self::Err> {
+    let (start, end) = string
+      .split_once('-')
+      .map(|(start, end)| {
+        (start.parse::<u64>().unwrap(), end.parse::<u64>().unwrap())
+      })
+        .unwrap();
+  
+    Ok(Timespan { start, end })
+  }
+}
+
+fn parse_timespan(string: &str) -> (Timespan, Timespan) {
   let (a, b) = string.split_once(',').unwrap();
-  let (a_start, a_end) = a.split_once('-').map(|(a_start, a_end)| (a_start.parse::<u64>().unwrap(), a_end.parse::<u64>().unwrap())).unwrap();
-  let (b_start, b_end) = b.split_once('-').map(|(b_start, b_end)| (b_start.parse::<u64>().unwrap(), b_end.parse::<u64>().unwrap())).unwrap();
 
-  (Timespan { start: a_start, end: a_end }, Timespan { start: b_start, end: b_end })
+  (a.parse::<Timespan>().unwrap(), b.parse::<Timespan>().unwrap())
 }
 
 fn main() {
-  let timespans = include_str!("input.txt").lines().map(parse_line);
+  let timespans = include_str!("input.txt").lines().map(parse_timespan);
 
   // part 1
   let count = timespans
     .clone()
-    .filter(|(span1, span2)| is_fully_overlapping(&span1, &span2))
+    .filter(|(span1, span2)| span1.is_fully_overlapping(&span2))
     .count();
 
   println!("part 1: {count}");
@@ -43,7 +56,7 @@ fn main() {
   // part 2
   let count = timespans
     .clone()
-    .filter(|(span1, span2)| is_partially_overlapping(&span1, &span2))
+    .filter(|(span1, span2)| span1.is_partially_overlapping(&span2))
     .count();
 
   println!("part 2: {count}");
