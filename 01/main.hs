@@ -1,30 +1,25 @@
 import System.IO
-import Data.List (sortBy)
+import Data.List.Split (splitOn)
+import Data.List (sort)
 import Data.Ord (comparing)
-
-splitIntoGroups :: [String] -> [[Int]]
-splitIntoGroups [] = []
-splitIntoGroups list = splitIntoGroupsHelper [] list
-  where 
-    splitIntoGroupsHelper current [] = [current]
-    splitIntoGroupsHelper current ("":xs) = current : splitIntoGroups xs
-    splitIntoGroupsHelper current (x:xs) = splitIntoGroupsHelper (read x:current) xs
 
 main = do  
   -- read file contents
-  handle <- openFile "/Users/josephbowler/agora/aoc2022/01/input.txt" ReadMode
+  handle <- openFile "input.txt" ReadMode
   contents <- hGetContents handle
 
   -- part 1
   let list = lines contents
-  let totalPerElf = map sum . splitIntoGroups $ list
-  let answerPart1 = maximum totalPerElf
-  print answerPart1
-
+  let lineGroups = splitOn [""] list
+  let numberGroups = map (map read) lineGroups
+  let unsortedResults = map sum numberGroups
+  let sortedResults = (reverse . sort) unsortedResults
+  let max = head sortedResults
+  print max
+  
   -- part 2
-  let sortedTotals = sortBy (flip compare) totalPerElf
-  let answerPart2 = sum . take 3 $ sortedTotals
-  print answerPart2
+  let best3 = take 3 sortedResults
+  print $ sum best3 
 
   -- tie up loose ends
   hClose handle
