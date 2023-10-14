@@ -148,7 +148,7 @@ getHeadOfStacks (x:xs) = do
 
 main = do
   -- read input
-  handle <- openFile "/Users/josephbowler/agora/aoc2022/05/input.txt" ReadMode
+  handle <- openFile "05/input.txt" ReadMode
   contents <- hGetContents handle
 
   -- part 1

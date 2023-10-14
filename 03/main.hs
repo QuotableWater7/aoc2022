@@ -32,7 +32,7 @@ splitRucksackPart2 _ = Left "Number of lines should be divisible by 3"
 
 main = do
   -- read file contents
-  handle <- openFile "/Users/josephbowler/agora/aoc2022/03/input.txt" ReadMode
+  handle <- openFile "03/input.txt" ReadMode
   contents <- hGetContents handle
 
   -- part 1

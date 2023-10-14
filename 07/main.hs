@@ -20,7 +20,7 @@ parseTerminalLine s
 
 main = do
   -- read file contents
-  handle <- openFile "/Users/josephbowler/agora/aoc2022/07/input.txt" ReadMode
+  handle <- openFile "07/input.txt" ReadMode
   contents <- hGetContents handle
 
   let terminalLines = mapM parseTerminalLine (lines contents)

@@ -177,7 +177,7 @@ computeScoreFromRounds monkeys = do
 
 main = do
   -- read input
-  handle <- openFile "input.txt" ReadMode
+  handle <- openFile "11/input.txt" ReadMode
   contents <- hGetContents handle
 
   -- part 1

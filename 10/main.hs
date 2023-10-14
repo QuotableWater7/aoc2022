@@ -34,7 +34,7 @@ chunk n list = n_elements : chunk n rest
     (n_elements, rest) = splitAt n list
 
 main = do
-  handle <- openFile "/Users/josephbowler/agora/aoc2022/10/input.txt" ReadMode
+  handle <- openFile "10/input.txt" ReadMode
   contents <- hGetContents handle
 
   -- part 1

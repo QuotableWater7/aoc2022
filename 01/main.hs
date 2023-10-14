@@ -5,7 +5,7 @@ import Data.Ord (comparing)
 
 main = do  
   -- read file contents
-  handle <- openFile "input.txt" ReadMode
+  handle <- openFile "01/input.txt" ReadMode
   contents <- hGetContents handle
 
   -- part 1

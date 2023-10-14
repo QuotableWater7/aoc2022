@@ -59,7 +59,7 @@ convertLineToSchedules line = do
 
 
 main = do
-  handle <- openFile "/Users/josephbowler/agora/aoc2022/04/input.txt" ReadMode
+  handle <- openFile "04/input.txt" ReadMode
   contents <- hGetContents handle
 
   -- part 1

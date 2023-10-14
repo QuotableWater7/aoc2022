@@ -84,7 +84,7 @@ computeSingleScorePart2 (first_player_choice, turn_result) = turn_result_score +
 
 main = do
   -- read file contents
-  handle <- openFile "/Users/josephbowler/agora/aoc2022/02/input.txt" ReadMode
+  handle <- openFile "02/input.txt" ReadMode
   contents <- hGetContents handle
 
   -- part 1

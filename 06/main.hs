@@ -12,7 +12,7 @@ computeIndex str num_uniq = computeIndexHelper 0 str num_uniq
       where first_n = take num_uniq list
 
 main = do
-  handle <- openFile "/Users/josephbowler/agora/aoc2022/06/input.txt" ReadMode
+  handle <- openFile "06/input.txt" ReadMode
   contents <- hGetContents handle
 
   -- part 1
